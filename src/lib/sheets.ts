@@ -16,8 +16,8 @@ export async function getCompetitorData() {
     const sheets = google.sheets({ version: "v4", auth });
     
     // 👑 読み込むシート名と範囲を指定（※実際のシート名に合わせて変更してください！）
-    // 例：シート名が「シート1」の場合。A2からI20までの範囲を取得します。
-    const range = "シート1!A2:I20"; 
+    // 例：シート名が「競合」の場合。A2からI20までの範囲を取得します。
+    const range = "競合!A2:I20"; 
 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.SPREADSHEET_ID,
