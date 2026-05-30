@@ -1,76 +1,14 @@
 import React from 'react';
 import { Shield, Activity, Droplets, Zap, Eye } from 'lucide-react';
+import { getCompetitorData } from '../lib/sheets'; // 👑 抽出部隊をインポート！
 
-const mktData = [
-  {
-    id: "DBB-001",
-    classification: "ハイエンド・絶対王者",
-    brand: "エレクトロン",
-    name: "デンキバリブラシ(R) 2.0 +ボディ",
-    price: 217800,
-    tech: "特許取得の『針』技術 / FRF Technology(R)",
-    waterproof: "非防水",
-    reviews: 149,
-    pins: "シリコン製"
-  },
-  {
-    id: "MYSE-001",
-    classification: "ミドル・王道",
-    brand: "ミーゼ",
-    name: "スカルプリフト アクティブ プラス",
-    price: 35640,
-    tech: "低中周波EMS / マイクロカレント / LED",
-    waterproof: "IPX5（防滴）",
-    reviews: 2834,
-    pins: "電極ピン"
-  },
-  {
-    id: "SAL-001",
-    classification: "エントリー・コスパ",
-    brand: "サロニア",
-    name: "EMSリフトブラシ",
-    price: 27500,
-    tech: "ブレンド波形(多周波数)EMS / 温感 / LED",
-    waterproof: "IPX5相当",
-    reviews: 1109,
-    pins: "3Dフィットピン"
-  },
-  {
-    id: "MYT-001",
-    classification: "ミドルハイ・高機能",
-    brand: "マイトレックス",
-    name: "プルーヴ",
-    price: 69960,
-    tech: "スキンリフトパルス(低周波) / ディープEMS(高周波)",
-    waterproof: "IPX5（アタッチメントのみ）",
-    reviews: 585,
-    pins: "専用アタッチメント"
-  },
-  {
-    id: "PAN-001",
-    classification: "ミドル・総合家電",
-    brand: "パナソニック",
-    name: "バイタルリフトブラシ",
-    price: 39600,
-    tech: "EMS / イオンケア / LED(赤) / 温感",
-    waterproof: "IPX5（お風呂使用可）",
-    reviews: 122,
-    pins: "クッションヘッド"
-  },
-  {
-    id: "ADE-001",
-    classification: "ニッチ・毛髪特化",
-    brand: "アデランス",
-    name: "ヘアリプロ ドゥライズ",
-    price: 46200,
-    tech: "RF / EMS / EP(類似) / LED / VR",
-    waterproof: "記載なし",
-    reviews: 3,
-    pins: "スプリング式(チタンコーティング)"
-  }
-];
+// 👑 【神機能】60秒ごとにバックグラウンドでデータを自動再取得（ISR）！
+export const revalidate = 60; 
 
-export default function Dashboard() {
+export default async function Dashboard() {
+  // 👑 サーバーサイドでAPI通信を発動！スプレッドシートから最新データを吸い上げる！
+  const mktData = await getCompetitorData();
+
   return (
     <main className="min-h-screen bg-mkt-bg text-mkt-text-main p-8">
       
@@ -86,7 +24,7 @@ export default function Dashboard() {
         </div>
         <div className="flex gap-4">
           <button className="bg-mkt-surface border border-mkt-border px-4 py-2 rounded hover:border-mkt-asagi transition-colors flex items-center gap-2">
-            <Activity size={16} /> Vercel 同期
+            <Activity size={16} /> 自動同期稼働中
           </button>
           <button className="bg-mkt-makoto text-white px-6 py-2 rounded font-bold hover:opacity-80 transition-colors shadow-[0_0_15px_rgba(204,0,0,0.5)]">
             フェーズ2 分析開始
@@ -94,9 +32,15 @@ export default function Dashboard() {
         </div>
       </header>
 
+      {mktData.length === 0 && (
+        <div className="text-mkt-makoto text-xl font-bold p-4 border border-mkt-makoto rounded bg-mkt-makoto/10">
+          ⚠️ データの取得に失敗したか、スプレッドシートが空です。範囲指定や認証情報を確認してください。
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {mktData.map((item) => (
-          <div key={item.id} className="bg-mkt-surface border border-mkt-border rounded-lg p-6 relative overflow-hidden group hover:border-mkt-asagi transition-all duration-300">
+        {mktData.map((item, index) => (
+          <div key={item.id || index} className="bg-mkt-surface border border-mkt-border rounded-lg p-6 relative overflow-hidden group hover:border-mkt-asagi transition-all duration-300">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-mkt-makoto to-mkt-asagi opacity-75"></div>
             
             <div className="flex justify-between items-start mb-4">
