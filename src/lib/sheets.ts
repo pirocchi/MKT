@@ -16,8 +16,8 @@ export async function getCompetitorData() {
     const sheets = google.sheets({ version: "v4", auth });
     
     // 👑 読み込むシート名と範囲を指定（※実際のシート名に合わせて変更してください！）
-    // 例：シート名が「競合」の場合。A2からI20までの範囲を取得します。
-    const range = "競合!A2:I20"; 
+    // 例：シート名が「競合」の場合。A2からR12までの範囲を取得します。
+    const range = "競合!A2:R12"; // 👑 シート名を「競合」、範囲を「R列」まで拡張！
 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.SPREADSHEET_ID,
@@ -38,7 +38,8 @@ export async function getCompetitorData() {
       tech: row[5] || "-",                 // F列: 技術
       waterproof: row[6] || "-",           // G列: 防水性能
       pins: row[7] || "-",                 // H列: ヘッド仕様
-      reviews: Number(row[8]?.replace(/[^0-9]/g, "")) || 0, // I列: レビュー数
+      reviews: Number(row[8]?.replace(/[^0-9]/g, "")) || 0, // I列
+      rawReviews: row[17] || "",
     }));
   } catch (error) {
     console.error("Google Sheets API 通信エラー:", error);
