@@ -15,6 +15,8 @@ type Competitor = {
   pins: string;
   reviews: number;
   rawReviews?: string;
+  scrapedDate?: string;   // 👑 追加：データ取得日時
+  averageRating?: string; // 👑 追加：平均星評価
   claims?: {
     target: string;
     problem: string;
@@ -44,7 +46,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
   const [analyzedData, setAnalyzedData] = useState<SentimentData | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // 👑 神速AIへの解析命令（理想と現実の両方を放り込む！）
+  // 👑 神速AIへの解析命令（理想、現実、そして「星評価」を放り込む！）
   const handleAnalyze = async (item: Competitor) => {
     setSelectedProduct(item);
     setAnalyzedData(null);
@@ -62,7 +64,8 @@ export default function DashboardClient({ initialData }: { initialData: Competit
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           reviewsText: item.rawReviews,
-          claims: item.claims || {} // 公式の理想もGeminiに喰わせる！
+          claims: item.claims || {},
+          averageRating: item.averageRating || "-" // 👑 AIに現実の星評価を叩きつける！
         })
       });
       
@@ -132,9 +135,23 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                 <span className="text-xs text-mkt-asagi font-bold mb-1 block">公式メインコピー:</span>
                 <p className="text-sm italic text-gray-300 truncate">"{item.claims?.copy || '未設定'}"</p>
               </div>
-              <div className="flex justify-between items-center pt-2">
+              
+              {/* 👑 市場フィードバック（星評価とレビュー数を並べて表示！） */}
+              <div className="flex justify-between items-end pt-2">
                 <span className="text-mkt-text-sub text-sm">市場フィードバック</span>
-                <span className="font-bold text-mkt-asagi">{item.reviews.toLocaleString()} <span className="text-xs font-normal">件</span></span>
+                <div className="text-right">
+                  <span className="font-bold text-yellow-400 mr-3 text-lg drop-shadow-[0_0_5px_rgba(250,204,21,0.5)]">
+                    ★ {item.averageRating || "-"}
+                  </span>
+                  <span className="font-bold text-mkt-asagi">
+                    {item.reviews.toLocaleString()} <span className="text-xs font-normal">件</span>
+                  </span>
+                </div>
+              </div>
+              
+              {/* 👑 データ取得日時をカード右下に配置 */}
+              <div className="text-right text-[10px] text-gray-500 mt-1">
+                最終索敵: {item.scrapedDate || "未取得"}
               </div>
             </div>
 
@@ -180,9 +197,15 @@ export default function DashboardClient({ initialData }: { initialData: Competit
 
               {/* 右側：残酷なファクトチェック（ギャップ分析） */}
               <div className="p-8 lg:w-2/3 flex flex-col bg-mkt-bg overflow-y-auto">
-                <h4 className="font-bold tracking-widest text-white mb-6 flex items-center gap-3 text-xl">
-                  <Crosshair className="text-mkt-makoto" /> AI GAP ANALYSIS REPORT
-                </h4>
+                <div className="flex justify-between items-center mb-6">
+                  <h4 className="font-bold tracking-widest text-white flex items-center gap-3 text-xl">
+                    <Crosshair className="text-mkt-makoto" /> AI GAP ANALYSIS REPORT
+                  </h4>
+                  <div className="flex items-center gap-4">
+                    <span className="text-xs text-mkt-text-sub">分析対象:</span>
+                    <span className="font-bold text-yellow-400 text-xl drop-shadow-[0_0_5px_rgba(250,204,21,0.5)]">★ {selectedProduct.averageRating || "-"}</span>
+                  </div>
+                </div>
                 
                 {isAnalyzing ? (
                   <div className="flex-grow flex flex-col items-center justify-center text-mkt-makoto">

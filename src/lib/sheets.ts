@@ -26,30 +26,29 @@ export async function getCompetitorData() {
     const rows = response.data.values;
     if (!rows || rows.length === 0) return [];
 
-    // 👑 変更箇所2：マッピングの完全刷新！
+    // 👑 変更箇所：マッピングにP列とQ列を追加！
     return rows.map((row) => ({
-      id: row[0] || "-",                   // A列: MKT-ID
-      classification: row[1] || "-",       // B列: 製品カテゴリ
-      brand: row[2] || "-",                // C列: ブランド名
-      name: row[3] || "-",                 // D列: 商品名
-      price: Number(row[4]?.replace(/[^0-9]/g, "")) || 0, // E列: 価格
-      tech: row[5] || "-",                 // F列: 搭載テクノロジー
-      waterproof: row[6] || "-",           // G列: 防水規格
-      pins: row[7] || "-",                 // H列: ピン仕様
-      reviews: Number(row[8]?.replace(/[^0-9]/g, "")) || 0, // I列: レビュー総数
-      
-      // 👑 ギャップ分析用データ（ブランド側の理想）を J列〜O列 から吸い上げ！
+      id: row[0] || "-",
+      classification: row[1] || "-",
+      brand: row[2] || "-",
+      name: row[3] || "-",
+      price: Number(row[4]?.replace(/[^0-9]/g, "")) || 0,
+      tech: row[5] || "-",
+      waterproof: row[6] || "-",
+      pins: row[7] || "-",
+      reviews: Number(row[8]?.replace(/[^0-9]/g, "")) || 0,
       claims: {
-        target: row[9] || "-",      // J列: 公式設定ターゲット
-        problem: row[10] || "-",    // K列: 公式が煽る『悩み』
-        usp: row[11] || "-",        // L列: 公式の最大のウリ
-        pain: row[12] || "-",       // M列: 公式が主張する『痛みのなさ』
-        ease: row[13] || "-",       // N列: 公式が主張する『手軽さ』
-        copy: row[14] || "-"        // O列: 広告上のメインコピー
+        target: row[9] || "-",
+        problem: row[10] || "-",
+        usp: row[11] || "-",
+        pain: row[12] || "-",
+        ease: row[13] || "-",
+        copy: row[14] || "-"
       },
-      
-      // 👑 現実（Sniperが撃ち込んだ生レビュー）
-      rawReviews: row[17] || "",    // R列: 生のレビューデータ(JSON)
+      // 👑 新たに吸い上げるレーダー情報！
+      scrapedDate: row[15] || "-",    // P列: データ取得日時
+      averageRating: row[16] || "-",  // Q列: 平均星評価
+      rawReviews: row[17] || "",      // R列: 生のレビューデータ(JSON)
     }));
   } catch (error) {
     console.error("Google Sheets API 通信エラー:", error);
