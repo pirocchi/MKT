@@ -15,9 +15,8 @@ export async function getCompetitorData() {
 
     const sheets = google.sheets({ version: "v4", auth });
     
-    // 👑 読み込むシート名と範囲を指定（※実際のシート名に合わせて変更してください！）
-    // 例：シート名が「競合」の場合。A2からR12までの範囲を取得します。
-    const range = "競合!A2:R12"; // 👑 シート名を「競合」、範囲を「R列」まで拡張！
+    // 👑 変更箇所1：シート名を「MKT_DB」に変更し、今後のデータ増を見越してR50まで範囲を拡大！
+    const range = "MKT_DB!A2:R50"; 
 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.SPREADSHEET_ID,
@@ -27,19 +26,30 @@ export async function getCompetitorData() {
     const rows = response.data.values;
     if (!rows || rows.length === 0) return [];
 
-    // 👑 スプレッドシートの行を、ダッシュボード用のデータ構造にマッピング！
-    // ※列の順番（0=A列, 1=B列...）は、実際のシートの列構成に合わせて数字を調整してください。
+    // 👑 変更箇所2：マッピングの完全刷新！
     return rows.map((row) => ({
-      id: row[0] || "-",                   // A列: ID (例: DBB-001)
-      classification: row[1] || "-",       // B列: クラス
+      id: row[0] || "-",                   // A列: MKT-ID
+      classification: row[1] || "-",       // B列: 製品カテゴリ
       brand: row[2] || "-",                // C列: ブランド名
       name: row[3] || "-",                 // D列: 商品名
-      price: Number(row[4]?.replace(/[^0-9]/g, "")) || 0, // E列: 価格（カンマや円を自動除去！）
-      tech: row[5] || "-",                 // F列: 技術
-      waterproof: row[6] || "-",           // G列: 防水性能
-      pins: row[7] || "-",                 // H列: ヘッド仕様
-      reviews: Number(row[8]?.replace(/[^0-9]/g, "")) || 0, // I列
-      rawReviews: row[17] || "",
+      price: Number(row[4]?.replace(/[^0-9]/g, "")) || 0, // E列: 価格
+      tech: row[5] || "-",                 // F列: 搭載テクノロジー
+      waterproof: row[6] || "-",           // G列: 防水規格
+      pins: row[7] || "-",                 // H列: ピン仕様
+      reviews: Number(row[8]?.replace(/[^0-9]/g, "")) || 0, // I列: レビュー総数
+      
+      // 👑 ギャップ分析用データ（ブランド側の理想）を J列〜O列 から吸い上げ！
+      claims: {
+        target: row[9] || "-",      // J列: 公式設定ターゲット
+        problem: row[10] || "-",    // K列: 公式が煽る『悩み』
+        usp: row[11] || "-",        // L列: 公式の最大のウリ
+        pain: row[12] || "-",       // M列: 公式が主張する『痛みのなさ』
+        ease: row[13] || "-",       // N列: 公式が主張する『手軽さ』
+        copy: row[14] || "-"        // O列: 広告上のメインコピー
+      },
+      
+      // 👑 現実（Sniperが撃ち込んだ生レビュー）
+      rawReviews: row[17] || "",    // R列: 生のレビューデータ(JSON)
     }));
   } catch (error) {
     console.error("Google Sheets API 通信エラー:", error);
