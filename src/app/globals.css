@@ -2,36 +2,42 @@
 
 @theme {
   /* ==================================================
-     🎌 新選組テーマカラー（MKT）の変数定義
-     【暁のブライト＆クリーン転調版】
+     🎌 新選組アクセントカラー（不動の主役）
   ================================================== */
+  --color-mkt-makoto: #CC0000; /* 誠の赤 */
+  --color-mkt-asagi: #4FBAD3;  /* 浅葱色 */
+
+  /* ==================================================
+     ☀️ デフォルト配色の反転（Tailwind標準ライトテーマ準拠）
+  ================================================== */
+  /* 背景：極めて薄いスレート（青みグレー）で洗練された印象に */
+  --color-mkt-bg: var(--color-slate-50); 
   
-  /* 爽やかな夜明けを思わせる「白銀（しらがね）」のベース背景 */
-  --color-mkt-bg: #F8FAFC; 
+  /* サーフェス：純白のカード背景 */
+  --color-mkt-surface: var(--color-white); 
   
-  /* コンテンツを際立たせる純白のサーフェス（カード等の背景） */
-  --color-mkt-surface: #FFFFFF; 
+  /* ボーダー：視線を邪魔しない薄い境界線 */
+  --color-mkt-border: var(--color-slate-200); 
   
-  /* 軽快で清潔感のあるボーダーライン */
-  --color-mkt-border: #E2E8F0; 
+  /* メインテキスト：漆黒ではなく、デフォルトの美しい濃いスレート（墨色） */
+  --color-mkt-text-main: var(--color-slate-900); 
   
-  /* 👑 誠の赤（血潮のような深い赤を完全維持！） */
-  --color-mkt-makoto: #CC0000; 
-  
-  /* 👑 新選組の浅葱色（明るい背景によく映えるよう維持！） */
-  --color-mkt-asagi: #4FBAD3; 
-  
-  /* 明るい背景に合わせて、文字色を「墨色」のような深い濃紺へ反転 */
-  --color-mkt-text-main: #0F172A; 
-  
-  /* 視認性を保ちつつ主張しすぎないサブテキストカラー */
-  --color-mkt-text-sub: #475569; 
+  /* サブテキスト：控えめなミディアムスレート */
+  --color-mkt-text-sub: var(--color-slate-500); 
 }
 
-body {
-  background-color: var(--color-mkt-bg);
-  color: var(--color-mkt-text-main);
-  font-family: Arial, Helvetica, sans-serif;
-  margin: 0;
-  padding: 0;
+@layer base {
+  body {
+    background-color: var(--color-mkt-bg);
+    color: var(--color-mkt-text-main);
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* 👑 ステルス迷彩（白文字）の強制解除パッチ */
+  /* コンポーネント側に text-white などが残っていた場合、強制的にメインテキスト色へ引き戻します */
+  .text-white, .text-gray-100, .text-slate-100 {
+    color: var(--color-mkt-text-main) !important;
+  }
 }
