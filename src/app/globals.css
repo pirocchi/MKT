@@ -1,14 +1,31 @@
 @import "tailwindcss";
 
 @theme {
-  /* 新選組テーマカラー（MKT）の変数定義 */
-  --color-mkt-bg: #121212;
-  --color-mkt-surface: #1E1E1E;
-  --color-mkt-border: #334155;
-  --color-mkt-makoto: #CC0000;
-  --color-mkt-asagi: #4FBAD3;
-  --color-mkt-text-main: #F8FAFC;
-  --color-mkt-text-sub: #94A3B8;
+  /* ==================================================
+     🎌 新選組テーマカラー（MKT）の変数定義
+     【暁のブライト＆クリーン転調版】
+  ================================================== */
+  
+  /* 爽やかな夜明けを思わせる「白銀（しらがね）」のベース背景 */
+  --color-mkt-bg: #F8FAFC; 
+  
+  /* コンテンツを際立たせる純白のサーフェス（カード等の背景） */
+  --color-mkt-surface: #FFFFFF; 
+  
+  /* 軽快で清潔感のあるボーダーライン */
+  --color-mkt-border: #E2E8F0; 
+  
+  /* 👑 誠の赤（血潮のような深い赤を完全維持！） */
+  --color-mkt-makoto: #CC0000; 
+  
+  /* 👑 新選組の浅葱色（明るい背景によく映えるよう維持！） */
+  --color-mkt-asagi: #4FBAD3; 
+  
+  /* 明るい背景に合わせて、文字色を「墨色」のような深い濃紺へ反転 */
+  --color-mkt-text-main: #0F172A; 
+  
+  /* 視認性を保ちつつ主張しすぎないサブテキストカラー */
+  --color-mkt-text-sub: #475569; 
 }
 
 body {
