@@ -106,7 +106,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
         </div>
         <div className="flex gap-4">
           <button className="bg-mkt-surface border border-mkt-border px-4 py-2 rounded flex items-center gap-2 font-bold shadow-sm">
-            <Activity size={16} className="text-green-500" /> SGT / AI 連携済
+            <Activity size={16} className="text-green-500" /> AI 連携済
           </button>
         </div>
       </header>
@@ -144,7 +144,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
               </div>
 
               <div className="bg-slate-50 p-3 rounded mt-2 border border-slate-200">
-                <span className="text-xs text-mkt-asagi font-black mb-1 block tracking-wider">公式メインコピー:</span>
+                <span className="text-xs text-mkt-asagi font-black mb-1 block tracking-wider">ブランド メインコピー:</span>
                 <p className="text-sm font-bold italic text-mkt-text-main truncate">"{item.claims?.copy || '未設定'}"</p>
               </div>
               
@@ -200,11 +200,11 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                 <h3 className="text-mkt-text-sub font-bold text-lg mb-8">{selectedProduct.name}</h3>
                 
                 <div className="mb-8 p-5 bg-white border-l-4 border-mkt-asagi border-y border-r border-slate-200 rounded-r shadow-sm">
-                  <h4 className="text-xs text-mkt-asagi font-black tracking-widest mb-2 flex items-center gap-2"><Quote size={14}/> 公式メインコピー</h4>
+                  <h4 className="text-xs text-mkt-asagi font-black tracking-widest mb-2 flex items-center gap-2"><Quote size={14}/> ブランド メインコピー</h4>
                   <p className="text-lg font-serif italic text-mkt-text-main font-bold leading-relaxed">"{selectedProduct.claims?.copy}"</p>
                 </div>
 
-                <h4 className="text-sm font-black text-mkt-text-sub tracking-widest border-b border-mkt-border pb-2 mb-4">BRAND CLAIMS (ブランドの主張)</h4>
+                <h4 className="text-sm font-black text-mkt-text-sub tracking-widest border-b border-mkt-border pb-2 mb-4">ブランドの主張</h4>
                 <div className="space-y-5">
                   <div><span className="text-xs text-slate-500 font-bold block mb-1">ターゲット層</span><p className="text-sm font-medium text-mkt-text-main">{selectedProduct.claims?.target}</p></div>
                   <div><span className="text-xs text-slate-500 font-bold block mb-1">訴求している悩み</span><p className="text-sm font-medium text-mkt-text-main">{selectedProduct.claims?.problem}</p></div>
@@ -230,7 +230,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   <div className="flex-grow flex flex-col items-center justify-center text-mkt-makoto">
                     <Loader2 className="animate-spin mb-6" size={64} />
                     <p className="tracking-widest font-black text-lg animate-pulse">AIによるファクトチェックを実行中...</p>
-                    <p className="text-xs font-bold text-mkt-text-sub mt-4">公式の訴求内容と実際のユーザーレビューを比較・分析しています</p>
+                    <p className="text-xs font-bold text-mkt-text-sub mt-4">ブランドの訴求内容と実際のユーザーレビューを比較・分析しています</p>
                   </div>
                 ) : errorMsg ? (
                   <div className="flex-grow flex items-center justify-center text-mkt-makoto font-bold border border-mkt-makoto/50 p-4 rounded bg-mkt-makoto/5">{errorMsg}</div>
@@ -281,7 +281,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                               <div className="bg-slate-50 p-4 rounded border-l-4 border-mkt-asagi border-y border-r border-slate-100">
-                                <span className="text-[10px] text-mkt-asagi font-black tracking-wider mb-2 block">公式の主張 (理想)</span>
+                                <span className="text-[10px] text-mkt-asagi font-black tracking-wider mb-2 block">ブランドの主張 (理想)</span>
                                 <p className="text-sm font-bold text-mkt-text-main leading-relaxed">{gap.claim}</p>
                               </div>
                               <div className="bg-slate-50 p-4 rounded border-l-4 border-mkt-makoto border-y border-r border-slate-100">
@@ -293,7 +293,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                             {/* 👑 我々の狙い目（Opportunity） */}
                             <div className="mt-4 bg-mkt-makoto/5 border border-mkt-makoto/20 p-4 rounded-md">
                               <span className="text-xs text-mkt-makoto font-black tracking-widest mb-2 flex items-center gap-2">
-                                <Target size={14} /> SGT 戦略的機会 (狙い目)
+                                <Target size={14} /> 戦略的機会 (狙い目)
                               </span>
                               <p className="text-sm text-mkt-text-main leading-relaxed font-black">{gap.opportunity}</p>
                             </div>
