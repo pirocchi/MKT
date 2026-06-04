@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const apiKey = process.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
-// 👑 引数に averageRating を追加！
+// 👑 個別製品のギャップ分析機能
 export async function analyzeReviewSentiment(reviewsText: string, claims: any, averageRating: string) {
   if (!apiKey) {
     console.warn("⚠️ GEMINI_API_KEYが設定されていません。");
@@ -12,138 +12,140 @@ export async function analyzeReviewSentiment(reviewsText: string, claims: any, a
 
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-3.5-flash", // 神速の最新鋭エンジン
+      model: "gemini-3.5-flash", // 👑 ヒロム様ご指定の神速エンジンで完全固定！
       generationConfig: {
         responseMimeType: "application/json",
-        temperature: 0.2, // 👑 追加：論理的でブレのない冷徹なファクト分析を強制！
+        temperature: 0.2, // 客観的で論理的な分析を強制
       },
     });
 
-    // 👑 空欄（undefined）によるシステムクラッシュを完全防御
     const safeClaims = claims || {};
 
-    // 👑 ギャップ分析（残酷なファクトチェック）用の最強プロンプト
     const prompt = `
-    あなたは世界最強のAmazonスポンサー広告・完全自律型統合運用システム「SAGITTARIUS（SGT）」の中枢推論エンジンです。
-    以下の「ブランド公式の訴求（理想）」と、実際の「ユーザーレビュー（現実）」を比較分析してください。
+    あなたはAmazonスポンサー広告の統合運用システム「SAGITTARIUS（SGT）」のデータ分析モジュールです。
+    以下の「ブランド公式の訴求内容」と、実際の「顧客のレビュー（評価）」を比較分析してください。
 
-    【ブランド公式の訴求（理想）】
-    ・ターゲット: ${safeClaims.target || "未設定"}
-    ・煽っている悩み: ${safeClaims.problem || "未設定"}
-    ・最大のウリ: ${safeClaims.usp || "未設定"}
+    【ブランド公式の訴求内容】
+    ・ターゲット層: ${safeClaims.target || "未設定"}
+    ・訴求している悩み: ${safeClaims.problem || "未設定"}
+    ・最大の強み(USP): ${safeClaims.usp || "未設定"}
     ・痛みのなさの主張: ${safeClaims.pain || "未設定"}
     ・手軽さの主張: ${safeClaims.ease || "未設定"}
-    ・メインコピー: ${safeClaims.copy || "未設定"}
+    ・広告メインコピー: ${safeClaims.copy || "未設定"}
 
-    【市場の現実（レーダー情報）】
-    ・現在の平均星評価: ${averageRating}  // 👑 AIに現実の星の数を叩きつける！
+    【市場の客観的評価】
+    ・現在の平均星評価: ${averageRating}
     
-    【ユーザーレビュー詳細】
+    【顧客レビュー詳細】
     ${reviewsText}
 
     【必須JSONフォーマット】
     {
       "sentiments": [
-        { "name": "ポジティブ (絶賛)", "value": 0, "color": "#4FBAD3" },
-        { "name": "ニュートラル (普通)", "value": 0, "color": "#94A3B8" },
-        { "name": "ネガティブ (不満)", "value": 0, "color": "#CC0000" }
+        { "name": "ポジティブ (高評価)", "value": 0, "color": "#4FBAD3" },
+        { "name": "ニュートラル (中立)", "value": 0, "color": "#94A3B8" },
+        { "name": "ネガティブ (低評価)", "value": 0, "color": "#CC0000" }
       ],
       "gapAnalysis": [
         {
-          "theme": "痛みのなさ",
+          "theme": "痛みのなさ等の評価テーマ",
           "claim": "ブランド側が主張している内容",
-          "reality": "レビューから判明した残酷な現実",
-          "assessment": "大絶賛 / 期待通り / やや乖離 / 大ハズシ (この4つのいずれか)",
-          "opportunity": "このギャップを突いて、後発の我々がどう広告コピーや戦略で攻めるべきかの狙い目"
+          "reality": "レビューから判明した実際の顧客の声",
+          "assessment": "大絶賛 / 期待通り / やや乖離 / 大きく乖離 (この4つのいずれか)",
+          "opportunity": "このギャップを踏まえ、自社が取るべき具体的な戦略や広告訴求の方向性"
         }
       ]
     }
     
     【ルール】
-    1. gapAnalysis は「痛みのなさ」「最大のウリ（効果）」「手軽さ」などのテーマ別に、最低3つ、最大5つ抽出すること。
-    2. assessment（評価）は、理想と現実のズレが酷いほど「大ハズシ」とする。
-    3. opportunity（狙い目）は、競合の弱点をどう突くか、SGTの広告戦略として具体的かつ攻撃的なアクションを提示すること。
-    4. 返却するデータはJSON文字列のみとし、マークダウン（\`\`\`json など）は絶対に含めないでください。
+    1. gapAnalysis は「痛みのなさ」「最大の強み（効果）」「手軽さ」などのテーマ別に、最低3つ、最大5つ抽出すること。
+    2. opportunity（戦略的機会）は、競合の弱点を踏まえた具体的かつ実務的なアクションを提示すること。
+    3. 返却するデータはJSON文字列のみとし、マークダウン記法（\`\`\`json など）は絶対に含めないでください。
     `;
 
-    console.log("[SGT-Brain] Gemini 3.5 Flash 起動！超解理解析を開始します...");
+    console.log("[SGT-Brain] 個別ギャップ分析を実行中...");
 
     const result = await model.generateContent(prompt);
     let responseText = result.response.text();
     
-    // 💥【一撃必殺】万が一GeminiがMarkdownの装飾（```json）を付けてきても、物理的に粉砕して純粋なJSONにする安全装置！
+    // 💥 万が一のマークダウン装飾を除去し、確実にJSON部分のみを抽出する安全処理
     responseText = responseText.replace(/^\`\`\`json\n?/, "").replace(/\n?\`\`\`$/, "").trim();
-
-    return JSON.parse(responseText);
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    
+    return jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(responseText);
     
   } catch (error) {
-    console.error("❌ Gemini API ギャップ分析エラー:", error);
+    console.error("❌ ギャップ分析エラー:", error);
     return null;
   }
 }
 
-// 👑 MKT-Genesis（創世モジュール）用の新関数！複数商品をクロス分析して最強企画書を作る！
-export async function generateProductGenesis(products: any[]) {
+// 👑 複数製品を比較分析し、新商品の企画案を作成する機能（旧：創世モジュール）
+export async function generateProductPlan(products: any[]) {
   if (!apiKey) return null;
 
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-3.5-flash",
+      model: "gemini-3.5-flash", // 👑 こちらも指定モデルで完全固定！
       generationConfig: {
         responseMimeType: "application/json",
-        temperature: 0.5, // 👑 企画のアイデア出しなので、少しだけ創造性（温度）を上げる！
+        temperature: 0.5, // 企画のアイデア出しのため、適度な創造性を持たせる
       },
     });
 
-    // 選択された製品データをGeminiが食べやすい文字列に圧縮！
+    // 選択された製品データを文字列に変換
     const productsInfo = products.map((p, index) => `
-      【競合${index + 1}】
+      【比較対象${index + 1}】
       ■ブランド: ${p.brand}
       ■商品名: ${p.name}
-      ■価格: ¥${p.price}
-      ■機能: ${p.tech}
-      ■防水: ${p.waterproof}
-      ■ターゲット: ${p.claims?.target || "-"}
-      ■最大のウリ: ${p.claims?.usp || "-"}
-      ■コピー: ${p.claims?.copy || "-"}
+      ■実売価格: ¥${p.price}
+      ■搭載機能: ${p.tech}
+      ■防水仕様: ${p.waterproof}
+      ■ターゲット層: ${p.claims?.target || "-"}
+      ■最大の強み(USP): ${p.claims?.usp || "-"}
+      ■広告コピー: ${p.claims?.copy || "-"}
       ■平均評価: ${p.averageRating}
     `).join('\n\n');
 
     const prompt = `
-    あなたは世界最強のマーケティング戦略家であり、商品企画の天才です。
-    以下の競合製品データをクロス分析し、それらの弱点をすべて克服して市場を完全に制圧する【最強の新製品の企画書（Blueprint）】を錬成してください。
+    あなたは企業のマーケティングおよび商品企画の専門家です。
+    以下の競合製品のデータを比較分析し、市場での優位性を確立するための新商品企画案を作成してください。
 
-    【比較・統合する競合製品群】
+    【比較対象の製品群】
     ${productsInfo}
 
     【必須JSONフォーマット】
     {
-      "genesisBlueprint": {
-        "conceptName": "新製品のコアコンセプト（キャッチーな一言で）",
+      "productPlan": {
+        "conceptName": "新商品の基本コンセプト（簡潔で魅力的な名称）",
         "targetPrice": "推奨する実売価格帯（例: 39,800円〜44,800円）とその戦略的理由",
         "coreFeatures": [
-          "競合を凌駕するための必須機能1",
-          "競合を凌駕するための必須機能2",
-          "競合を凌駕するための必須機能3"
+          "競合優位性を確保するための必須機能要件1",
+          "競合優位性を確保するための必須機能要件2",
+          "競合優位性を確保するための必須機能要件3"
         ],
-        "differentiation": "選んだ競合製品群の『弱点・盲点』を我々がどう突くのか（クロス分析結果）",
-        "mainCopy": "消費者の心を撃ち抜く最強の広告メインコピー"
+        "differentiation": "比較対象の弱点を踏まえた、自社製品の明確な差別化ポイント",
+        "mainCopy": "ターゲット顧客に向けた魅力的な広告メインコピー"
       }
     }
     
-    ルール: 返却データは純粋なJSON文字列のみ。マークダウンは不要です。
+    【ルール】
+    返却するデータはJSON文字列のみとし、マークダウン記法（\`\`\`json など）は絶対に含めないでください。
     `;
 
-    console.log("[SGT-Brain] MKT-Genesis 起動！クロス分析を実行中...");
+    console.log("[SGT-Brain] 新商品企画案の作成を実行中...");
 
     const result = await model.generateContent(prompt);
     let responseText = result.response.text();
+    
+    // 💥 万が一のマークダウン装飾を除去し、確実にJSON部分のみを抽出する安全処理
     responseText = responseText.replace(/^\`\`\`json\n?/, "").replace(/\n?\`\`\`$/, "").trim();
-
-    return JSON.parse(responseText);
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    
+    return jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(responseText);
 
   } catch (error) {
-    console.error("❌ MKT-Genesis エラー:", error);
+    console.error("❌ 新商品企画作成エラー:", error);
     return null;
   }
 }
