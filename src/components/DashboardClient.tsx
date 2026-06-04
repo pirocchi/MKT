@@ -92,15 +92,16 @@ export default function DashboardClient({ initialData }: { initialData: Competit
         </div>
       </header>
 
-      {/* 新商品企画案作成ボタン（元のグラデーション配色を復元） */}
+      {/* 👑 新選組テーマ完全対応：浅葱色×誠レッドの起動ボタン */}
       {selectedForPlan.length >= 2 && (
         <div className="fixed bottom-8 right-8 z-40 animate-in slide-in-from-bottom-10 fade-in duration-300">
           <button 
             onClick={handleProductPlan}
             disabled={isGeneratingPlan}
-            className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold px-8 py-4 rounded-full shadow-2xl flex items-center gap-3 hover:scale-105 transition-transform disabled:opacity-70 disabled:cursor-not-allowed border-2 border-white/20"
+            style={{ color: '#FFFFFF' }}
+            className="bg-mkt-asagi hover:opacity-90 font-bold px-8 py-4 rounded-full shadow-2xl flex items-center gap-3 hover:scale-105 transition-transform disabled:opacity-70 disabled:cursor-not-allowed border-4 border-mkt-makoto"
           >
-            {isGeneratingPlan ? <Loader2 size={24} className="animate-spin" /> : <FileText size={24} />}
+            {isGeneratingPlan ? <Loader2 size={24} className="animate-spin text-white" /> : <FileText size={24} className="text-white" />}
             {isGeneratingPlan ? "新商品企画案を作成中..." : `選択した${selectedForPlan.length}製品から新商品企画案を作成`}
           </button>
         </div>
@@ -110,13 +111,12 @@ export default function DashboardClient({ initialData }: { initialData: Competit
         {initialData.map((item, index) => {
           const isSelected = selectedForPlan.some(p => p.id === item.id);
           return (
-            <div key={item.id || index} className={`bg-mkt-surface border-2 rounded-lg p-6 relative overflow-hidden group transition-all duration-300 flex flex-col shadow-sm ${isSelected ? 'border-indigo-500 bg-indigo-50/5' : 'border-mkt-border hover:border-mkt-asagi'}`}>
+            <div key={item.id || index} className={`bg-mkt-surface border-2 rounded-lg p-6 relative overflow-hidden group transition-all duration-300 flex flex-col shadow-sm ${isSelected ? 'border-mkt-makoto bg-mkt-makoto/5' : 'border-mkt-border hover:border-mkt-asagi'}`}>
               
               <button onClick={() => togglePlanSelection(item)} className="absolute top-4 right-4 z-10 transition-colors">
-                {isSelected ? <CheckSquare size={28} className="text-indigo-500 bg-white rounded" /> : <Square size={28} className="text-slate-300 hover:text-indigo-400 bg-white rounded" />}
+                {isSelected ? <CheckSquare size={28} className="text-mkt-makoto bg-white rounded" /> : <Square size={28} className="text-slate-300 hover:text-mkt-makoto bg-white rounded" />}
               </button>
 
-              {/* 上部のアクセントライン復元 */}
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-mkt-makoto to-mkt-asagi opacity-75"></div>
               
               <div className="w-full h-48 mb-5 bg-slate-50 border border-slate-100 rounded-md flex items-center justify-center overflow-hidden relative mt-4">
@@ -134,7 +134,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
               <h2 className="text-2xl font-bold mb-1 text-mkt-text-main">{item.brand}</h2>
               <h3 className="text-mkt-text-sub text-sm mb-5 h-10 font-medium line-clamp-2">{item.name}</h3>
               
-              {/* 購入ページリンク（白文字の強制および巨大化指定を復元） */}
               {(item.amazonUrl || item.rakutenUrl) && (
                 <div className="flex gap-3 mb-6">
                   {item.amazonUrl && <a href={item.amazonUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#FFFFFF' }} className="flex-1 bg-slate-800 text-sm font-black py-3 rounded flex justify-center items-center gap-2 hover:bg-slate-700 transition shadow-md"><ShoppingCart size={16} /> Amazon</a>}
@@ -160,7 +159,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                 </div>
               </div>
 
-              {/* 分析ボタンの配色復元 */}
               <button onClick={() => handleAnalyze(item)} className="w-full bg-mkt-surface border-2 border-mkt-makoto text-mkt-makoto py-3 rounded hover:bg-mkt-makoto hover:text-white transition-colors font-black tracking-wider flex justify-center items-center gap-2 text-lg">
                 <Target size={20} /> 個別製品の分析を実行
               </button>
@@ -169,36 +167,36 @@ export default function DashboardClient({ initialData }: { initialData: Competit
         })}
       </div>
 
-      {/* 新商品企画案 モーダル（横スクロール防止・配色復元版） */}
+      {/* 👑 新商品企画案 モーダル：テーマ完全統一版 */}
       {planData && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
-          <div className="bg-slate-50 border-2 border-indigo-500/50 rounded-2xl w-full max-w-5xl max-h-[95vh] flex flex-col relative overflow-hidden shadow-[0_0_50px_-12px_rgba(99,102,241,0.5)]">
-            <button onClick={() => setPlanData(null)} className="absolute top-4 right-4 text-slate-400 hover:text-indigo-600 transition-colors z-20 bg-white p-2 rounded-full shadow-md"><X size={28} /></button>
+          <div className="bg-slate-50 border-2 border-mkt-asagi/50 rounded-2xl w-full max-w-5xl max-h-[95vh] flex flex-col relative overflow-hidden shadow-2xl">
+            <button onClick={() => setPlanData(null)} className="absolute top-4 right-4 text-slate-400 hover:text-mkt-makoto transition-colors z-20 bg-white p-2 rounded-full shadow-md"><X size={28} /></button>
             
-            <div className="bg-gradient-to-r from-purple-900 to-indigo-900 p-8 text-white">
-              <span className="bg-indigo-500 text-xs font-bold px-3 py-1 rounded tracking-widest flex items-center gap-2 w-max mb-4"><FileText size={14}/> 新商品企画案</span>
+            <div className="bg-mkt-surface border-b-4 border-mkt-makoto p-8 text-mkt-text-main">
+              <span className="bg-mkt-asagi text-white text-xs font-bold px-3 py-1 rounded tracking-widest flex items-center gap-2 w-max mb-4 shadow-sm"><FileText size={14}/> 新商品企画案</span>
               <h2 className="text-3xl md:text-4xl font-bold mb-3 leading-tight">{planData.conceptName}</h2>
-              <p className="text-indigo-200 font-bold text-lg">"{planData.mainCopy}"</p>
+              <p className="text-mkt-makoto font-bold text-lg">"{planData.mainCopy}"</p>
             </div>
 
             <div className="p-8 overflow-y-auto flex-grow flex flex-col gap-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                  <h4 className="text-xs text-slate-500 font-bold tracking-widest mb-3 flex items-center gap-2"><Target size={16} className="text-indigo-500"/> 推奨販売価格</h4>
-                  <p className="text-xl font-bold text-slate-800 leading-relaxed break-words">{planData.targetPrice}</p>
+                  <h4 className="text-xs text-slate-500 font-bold tracking-widest mb-3 flex items-center gap-2"><Target size={16} className="text-mkt-asagi"/> 推奨販売価格</h4>
+                  <p className="text-xl font-bold text-mkt-text-main leading-relaxed break-words">{planData.targetPrice}</p>
                 </div>
                 <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                  <h4 className="text-xs text-slate-500 font-bold tracking-widest mb-3 flex items-center gap-2"><Crosshair size={16} className="text-pink-500"/> 競合優位性</h4>
+                  <h4 className="text-xs text-slate-500 font-bold tracking-widest mb-3 flex items-center gap-2"><Crosshair size={16} className="text-mkt-makoto"/> 競合優位性</h4>
                   <p className="text-base font-bold text-slate-700 leading-relaxed whitespace-pre-wrap break-words">{planData.differentiation}</p>
                 </div>
               </div>
 
-              <div className="bg-indigo-50/50 p-6 rounded-xl border border-indigo-100">
-                <h4 className="text-sm text-indigo-800 font-bold tracking-widest mb-4 border-b border-indigo-200 pb-2">必須機能要件</h4>
+              <div className="bg-slate-50 p-6 rounded-xl border border-mkt-border">
+                <h4 className="text-sm text-mkt-text-main font-bold tracking-widest mb-4 border-b border-slate-200 pb-2">必須機能要件</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {planData.coreFeatures.map((feature, i) => (
-                    <div key={i} className="bg-white p-4 rounded-lg border border-indigo-100 shadow-sm flex items-start gap-3">
-                      <div className="bg-indigo-500 text-white rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 font-bold text-sm">{i + 1}</div>
+                    <div key={i} className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex items-start gap-3">
+                      <div className="bg-mkt-asagi text-white rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 font-bold text-sm">{i + 1}</div>
                       <p className="text-sm font-bold text-slate-700 break-words">{feature}</p>
                     </div>
                   ))}
@@ -209,7 +207,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
         </div>
       )}
 
-      {/* 個別製品分析 モーダル（配色復元版） */}
+      {/* 個別製品分析 モーダル（既存のまま） */}
       {selectedProduct && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-mkt-surface border border-mkt-border rounded-xl w-full max-w-7xl h-[90vh] flex flex-col relative overflow-hidden shadow-2xl">
