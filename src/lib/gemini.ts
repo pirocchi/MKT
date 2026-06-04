@@ -81,3 +81,69 @@ export async function analyzeReviewSentiment(reviewsText: string, claims: any, a
     return null;
   }
 }
+
+// 👑 MKT-Genesis（創世モジュール）用の新関数！複数商品をクロス分析して最強企画書を作る！
+export async function generateProductGenesis(products: any[]) {
+  if (!apiKey) return null;
+
+  try {
+    const model = genAI.getGenerativeModel({
+      model: "gemini-3.5-flash",
+      generationConfig: {
+        responseMimeType: "application/json",
+        temperature: 0.5, // 👑 企画のアイデア出しなので、少しだけ創造性（温度）を上げる！
+      },
+    });
+
+    // 選択された製品データをGeminiが食べやすい文字列に圧縮！
+    const productsInfo = products.map((p, index) => `
+      【競合${index + 1}】
+      ■ブランド: ${p.brand}
+      ■商品名: ${p.name}
+      ■価格: ¥${p.price}
+      ■機能: ${p.tech}
+      ■防水: ${p.waterproof}
+      ■ターゲット: ${p.claims?.target || "-"}
+      ■最大のウリ: ${p.claims?.usp || "-"}
+      ■コピー: ${p.claims?.copy || "-"}
+      ■平均評価: ${p.averageRating}
+    `).join('\n\n');
+
+    const prompt = `
+    あなたは世界最強のマーケティング戦略家であり、商品企画の天才です。
+    以下の競合製品データをクロス分析し、それらの弱点をすべて克服して市場を完全に制圧する【最強の新製品の企画書（Blueprint）】を錬成してください。
+
+    【比較・統合する競合製品群】
+    ${productsInfo}
+
+    【必須JSONフォーマット】
+    {
+      "genesisBlueprint": {
+        "conceptName": "新製品のコアコンセプト（キャッチーな一言で）",
+        "targetPrice": "推奨する実売価格帯（例: 39,800円〜44,800円）とその戦略的理由",
+        "coreFeatures": [
+          "競合を凌駕するための必須機能1",
+          "競合を凌駕するための必須機能2",
+          "競合を凌駕するための必須機能3"
+        ],
+        "differentiation": "選んだ競合製品群の『弱点・盲点』を我々がどう突くのか（クロス分析結果）",
+        "mainCopy": "消費者の心を撃ち抜く最強の広告メインコピー"
+      }
+    }
+    
+    ルール: 返却データは純粋なJSON文字列のみ。マークダウンは不要です。
+    `;
+
+    console.log("[SGT-Brain] MKT-Genesis 起動！クロス分析を実行中...");
+
+    const result = await model.generateContent(prompt);
+    let responseText = result.response.text();
+    responseText = responseText.replace(/^\`\`\`json\n?/, "").replace(/\n?\`\`\`$/, "").trim();
+
+    return JSON.parse(responseText);
+
+  } catch (error) {
+    console.error("❌ MKT-Genesis エラー:", error);
+    return null;
+  }
+}
