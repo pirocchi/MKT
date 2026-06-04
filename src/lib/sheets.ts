@@ -15,24 +15,24 @@ export async function getCompetitorData() {
 
     const sheets = google.sheets({ version: "v4", auth });
     
-    // 💥【超進化】MKT_DB と MKT_Reviews の「2つのシート」を同時並行で引っこ抜く！
+    // 💥【超進化】取得範囲を T列（20列目：楽天URL）まで完全開放！！！
     const [dbResponse, revResponse] = await Promise.all([
       sheets.spreadsheets.values.get({
         spreadsheetId: process.env.SPREADSHEET_ID,
-        range: "MKT_DB!A2:R50", // 👑 R列（画像URL）まで取得範囲を再拡大！
+        range: "MKT_DB!A2:T50", 
       }),
       sheets.spreadsheets.values.get({
         spreadsheetId: process.env.SPREADSHEET_ID,
-        range: "MKT_Reviews!A2:G", // 👑 無限蓄積されている全レビューを底まで取得！
+        range: "MKT_Reviews!A2:G", 
       })
     ]);
 
     const dbRows = dbResponse.data.values;
-    const revRows = revResponse.data.values || []; // レビューが0件の場合の安全装置
+    const revRows = revResponse.data.values || [];
 
     if (!dbRows || dbRows.length === 0) return [];
 
-    // 👑 取得した数千件の全レビューを、「MKT-ID」ごとに瞬時に仕分けるハッシュマップを錬成！
+    // 👑 レビューの仕分け
     const reviewsMap: Record<string, any[]> = {};
     revRows.forEach((row) => {
       const mktId = row[0];
@@ -42,7 +42,6 @@ export async function getCompetitorData() {
         reviewsMap[mktId] = [];
       }
 
-      // Geminiに読ませるための美しいオブジェクトに整形して格納
       reviewsMap[mktId].push({
         platform: row[1] || "",
         title: row[2] || "",
@@ -53,10 +52,10 @@ export async function getCompetitorData() {
       });
     });
 
-    // 👑 DBデータと、仕分けたレビューデータを合体させてフロントエンドへ送る！
+    // 👑 データの結合とT列までの完全マッピング！
     return dbRows.map((row) => {
       const id = row[0] || "-";
-      const productReviews = reviewsMap[id] || []; // そのIDに紐づくレビュー群を取り出す
+      const productReviews = reviewsMap[id] || []; 
 
       return {
         id: id,
@@ -78,9 +77,9 @@ export async function getCompetitorData() {
         },
         scrapedDate: row[15] || "-",    
         averageRating: row[16] || "-",  
-        imageUrl: row[17] || "", // 👑 R列: 新たな視覚モジュール（画像URL）を取得！
-        // 💥 フロントエンドのUIは一切変更不要！
-        // オブジェクト配列をJSON文字列に変換して、今まで通り rawReviews に突っ込む！
+        imageUrl: row[17] || "",     // R列: 画像URL
+        amazonUrl: row[18] || "",    // 👑 S列: Amazon商品ページURL
+        rakutenUrl: row[19] || "",   // 👑 T列: 楽天商品ページURL
         rawReviews: productReviews.length > 0 ? JSON.stringify(productReviews) : "", 
       };
     });
