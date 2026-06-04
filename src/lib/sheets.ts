@@ -19,7 +19,7 @@ export async function getCompetitorData() {
     const [dbResponse, revResponse] = await Promise.all([
       sheets.spreadsheets.values.get({
         spreadsheetId: process.env.SPREADSHEET_ID,
-        range: "MKT_DB!A2:Q50", // 👑 R列は廃止されたのでQ列まで読めばOK！
+        range: "MKT_DB!A2:R50", // 👑 R列（画像URL）まで取得範囲を再拡大！
       }),
       sheets.spreadsheets.values.get({
         spreadsheetId: process.env.SPREADSHEET_ID,
@@ -78,6 +78,7 @@ export async function getCompetitorData() {
         },
         scrapedDate: row[15] || "-",    
         averageRating: row[16] || "-",  
+        imageUrl: row[17] || "", // 👑 R列: 新たな視覚モジュール（画像URL）を取得！
         // 💥 フロントエンドのUIは一切変更不要！
         // オブジェクト配列をJSON文字列に変換して、今まで通り rawReviews に突っ込む！
         rawReviews: productReviews.length > 0 ? JSON.stringify(productReviews) : "", 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Shield, Activity, Droplets, Zap, Eye, BarChart2, X, MessageSquareWarning, Loader2, Target, AlertTriangle, Crosshair, Quote } from 'lucide-react';
+import { Shield, Activity, Droplets, Zap, Eye, BarChart2, X, MessageSquareWarning, Loader2, Target, AlertTriangle, Crosshair, Quote, Image as ImageIcon } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 type Competitor = {
@@ -17,6 +17,7 @@ type Competitor = {
   rawReviews?: string;
   scrapedDate?: string; 
   averageRating?: string; 
+  imageUrl?: string; // 👑 SGT視覚モジュール追加！
   claims?: {
     target: string;
     problem: string;
@@ -116,13 +117,25 @@ export default function DashboardClient({ initialData }: { initialData: Competit
           <div key={item.id || index} className="bg-mkt-surface border border-mkt-border rounded-lg p-6 relative overflow-hidden group hover:border-mkt-asagi transition-all duration-300 flex flex-col shadow-sm hover:shadow-md">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-mkt-makoto to-mkt-asagi opacity-75"></div>
             
+            {/* 👑 画像表示エリア（カード一覧用） */}
+            <div className="w-full h-48 mb-5 bg-slate-50 border border-slate-100 rounded-md flex items-center justify-center overflow-hidden relative transition-all">
+              {item.imageUrl ? (
+                <img src={item.imageUrl} alt={item.name} className="object-contain w-full h-full p-2 mix-blend-multiply transition-transform duration-500 group-hover:scale-105" />
+              ) : (
+                <div className="text-slate-300 flex flex-col items-center">
+                  <ImageIcon size={32} className="mb-2 opacity-50" />
+                  <span className="text-xs font-bold tracking-widest">NO IMAGE</span>
+                </div>
+              )}
+            </div>
+
             <div className="flex justify-between items-start mb-4">
               <span className="text-xs font-bold text-white bg-mkt-asagi px-2 py-1 rounded">{item.classification}</span>
               <span className="text-mkt-text-sub text-sm font-bold">{item.id}</span>
             </div>
             
             <h2 className="text-2xl font-bold mb-1 text-mkt-text-main">{item.brand}</h2>
-            <h3 className="text-mkt-text-sub text-sm mb-4 h-10 font-medium">{item.name}</h3>
+            <h3 className="text-mkt-text-sub text-sm mb-4 h-10 font-medium line-clamp-2">{item.name}</h3>
             
             <div className="space-y-4 mb-6 flex-grow">
               <div className="flex justify-between items-center border-b border-mkt-border pb-3">
@@ -167,13 +180,22 @@ export default function DashboardClient({ initialData }: { initialData: Competit
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-mkt-surface border border-mkt-border rounded-xl w-full max-w-7xl h-[90vh] flex flex-col relative overflow-hidden shadow-2xl">
             
-            <button onClick={() => setSelectedProduct(null)} className="absolute top-4 right-4 text-mkt-text-sub hover:text-mkt-makoto transition-colors z-20 bg-slate-100 hover:bg-slate-200 p-1 rounded-full"><X size={28} /></button>
+            <button onClick={() => setSelectedProduct(null)} className="absolute top-4 right-4 text-mkt-text-sub hover:text-mkt-makoto transition-colors z-20 bg-slate-100 hover:bg-slate-200 p-1 rounded-full shadow-sm"><X size={28} /></button>
 
             <div className="flex flex-col lg:flex-row h-full overflow-hidden">
               
               {/* 左側：ブランドの理想（公式主張） */}
-              <div className="p-8 lg:w-1/3 border-r border-mkt-border bg-slate-50 overflow-y-auto">
-                <span className="text-xs font-bold text-white bg-mkt-asagi px-2 py-1 rounded mb-4 inline-block">{selectedProduct.classification}</span>
+              <div className="p-8 lg:w-1/3 border-r border-mkt-border bg-slate-50 overflow-y-auto relative">
+                
+                <span className="text-xs font-bold text-white bg-mkt-asagi px-2 py-1 rounded mb-4 inline-block shadow-sm">{selectedProduct.classification}</span>
+                
+                {/* 👑 画像表示エリア（モーダル用） */}
+                {selectedProduct.imageUrl && (
+                  <div className="w-full h-56 mb-6 bg-white border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden shadow-sm">
+                    <img src={selectedProduct.imageUrl} alt={selectedProduct.name} className="object-contain w-full h-full p-4 mix-blend-multiply" />
+                  </div>
+                )}
+                
                 <h2 className="text-3xl font-black mb-2 text-mkt-text-main">{selectedProduct.brand}</h2>
                 <h3 className="text-mkt-text-sub font-bold text-lg mb-8">{selectedProduct.name}</h3>
                 
