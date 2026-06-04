@@ -18,8 +18,8 @@ type Competitor = {
   scrapedDate?: string; 
   averageRating?: string; 
   imageUrl?: string; 
-  amazonUrl?: string;  // 👑 Amazon URL追加！
-  rakutenUrl?: string; // 👑 楽天 URL追加！
+  amazonUrl?: string;  
+  rakutenUrl?: string; 
   claims?: {
     target: string;
     problem: string;
@@ -107,7 +107,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
         </div>
         <div className="flex gap-4">
           <button className="bg-mkt-surface border border-mkt-border px-4 py-2 rounded flex items-center gap-2 font-bold shadow-sm">
-            <Activity size={16} className="text-green-500" /> SGT / AI 連携済
+            <Activity size={16} className="text-green-500" /> AI 連携済
           </button>
         </div>
       </header>
@@ -134,57 +134,59 @@ export default function DashboardClient({ initialData }: { initialData: Competit
             </div>
             
             <h2 className="text-2xl font-bold mb-1 text-mkt-text-main">{item.brand}</h2>
-            <h3 className="text-mkt-text-sub text-sm mb-4 h-10 font-medium line-clamp-2">{item.name}</h3>
+            <h3 className="text-mkt-text-sub text-sm mb-5 h-10 font-medium line-clamp-2">{item.name}</h3>
             
-            {/* 👑 戦術リンクボタン（Amazon / 楽天） */}
+            {/* 💥 ボタン超強化：インラインスタイルで絶対に白文字にする！サイズと太さもMAX！ */}
             {(item.amazonUrl || item.rakutenUrl) && (
-              <div className="flex gap-2 mb-4">
+              <div className="flex gap-3 mb-6">
                 {item.amazonUrl && (
-                  <a href={item.amazonUrl} target="_blank" rel="noopener noreferrer" className="flex-1 bg-slate-800 text-white text-xs font-bold py-2 rounded flex justify-center items-center gap-1 hover:bg-slate-700 transition">
-                    <ShoppingCart size={14} /> Amazon
+                  <a href={item.amazonUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#FFFFFF' }} className="flex-1 bg-slate-800 text-sm font-black py-3 rounded flex justify-center items-center gap-2 hover:bg-slate-700 transition shadow-md">
+                    <ShoppingCart size={16} /> Amazon
                   </a>
                 )}
                 {item.rakutenUrl && (
-                  <a href={item.rakutenUrl} target="_blank" rel="noopener noreferrer" className="flex-1 bg-[#BF0000] text-white text-xs font-bold py-2 rounded flex justify-center items-center gap-1 hover:bg-[#990000] transition">
-                    <ShoppingCart size={14} /> 楽天市場
+                  <a href={item.rakutenUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#FFFFFF' }} className="flex-1 bg-[#BF0000] text-sm font-black py-3 rounded flex justify-center items-center gap-2 hover:bg-[#990000] transition shadow-md">
+                    <ShoppingCart size={16} /> 楽天市場
                   </a>
                 )}
               </div>
             )}
 
-            <div className="space-y-4 mb-6 flex-grow">
+            <div className="space-y-5 mb-6 flex-grow">
               <div className="flex justify-between items-center border-b border-mkt-border pb-3">
                 <span className="text-mkt-text-sub font-bold">実売価格</span>
-                <span className="font-black text-xl text-mkt-text-main">¥{item.price.toLocaleString()}</span>
+                {/* 💥 価格を text-3xl に巨大化！ */}
+                <span className="font-black text-3xl text-mkt-text-main tracking-tight">¥{item.price.toLocaleString()}</span>
               </div>
 
               <div className="bg-slate-50 p-3 rounded mt-2 border border-slate-200">
-                <span className="text-xs text-mkt-asagi font-black mb-1 block tracking-wider">公式メインコピー:</span>
+                <span className="text-xs text-mkt-asagi font-black mb-1 block tracking-wider">ブランド メインコピー:</span>
                 <p className="text-sm font-bold italic text-mkt-text-main truncate">"{item.claims?.copy || '未設定'}"</p>
               </div>
               
-              <div className="flex justify-between items-end pt-2">
+              <div className="flex justify-between items-end pt-3">
                 <span className="text-mkt-text-sub text-sm font-bold">市場フィードバック</span>
-                <div className="text-right">
-                  <span className="font-black text-yellow-500 mr-3 text-lg">
+                <div className="flex items-baseline gap-3">
+                  {/* 💥 星評価とレビュー数を text-2xl に巨大化！ */}
+                  <span className="font-black text-yellow-500 text-2xl drop-shadow-sm">
                     ★ {item.averageRating || "-"}
                   </span>
-                  <span className="font-black text-mkt-asagi">
-                    {item.reviews.toLocaleString()} <span className="text-xs font-bold">件</span>
+                  <span className="font-black text-mkt-asagi text-2xl">
+                    {item.reviews.toLocaleString()} <span className="text-sm font-bold">件</span>
                   </span>
                 </div>
               </div>
               
-              <div className="text-right text-[10px] text-mkt-text-sub mt-1 font-bold">
+              <div className="text-right text-[10px] text-mkt-text-sub mt-2 font-bold">
                 データ取得日時: {item.scrapedDate || "未取得"}
               </div>
             </div>
 
             <button 
               onClick={() => handleAnalyze(item)}
-              className="w-full bg-mkt-surface border border-mkt-makoto text-mkt-makoto py-3 rounded hover:bg-mkt-makoto hover:text-white transition-colors font-black tracking-wider flex justify-center items-center gap-2"
+              className="w-full bg-mkt-surface border-2 border-mkt-makoto text-mkt-makoto py-3 rounded hover:bg-mkt-makoto hover:text-white transition-colors font-black tracking-wider flex justify-center items-center gap-2 text-lg"
             >
-              <Target size={18} /> ギャップ分析を実行
+              <Target size={20} /> ギャップ分析を実行
             </button>
           </div>
         ))}
@@ -199,9 +201,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
 
             <div className="flex flex-col lg:flex-row h-full overflow-hidden">
               
-              {/* 左側：ブランドの理想（公式主張） */}
               <div className="p-8 lg:w-1/3 border-r border-mkt-border bg-slate-50 overflow-y-auto relative">
-                
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-xs font-bold text-white bg-mkt-asagi px-2 py-1 rounded shadow-sm">{selectedProduct.classification}</span>
                 </div>
@@ -213,26 +213,26 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                 )}
                 
                 <h2 className="text-3xl font-black mb-1 text-mkt-text-main">{selectedProduct.brand}</h2>
-                <h3 className="text-mkt-text-sub font-bold text-lg mb-4">{selectedProduct.name}</h3>
+                <h3 className="text-mkt-text-sub font-bold text-lg mb-6">{selectedProduct.name}</h3>
 
-                {/* 👑 モーダル内 戦術リンクボタン */}
+                {/* 💥 モーダル内のボタンもインラインスタイルで白文字強制＆巨大化！ */}
                 {(selectedProduct.amazonUrl || selectedProduct.rakutenUrl) && (
                   <div className="flex gap-3 mb-8">
                     {selectedProduct.amazonUrl && (
-                      <a href={selectedProduct.amazonUrl} target="_blank" rel="noopener noreferrer" className="bg-slate-800 text-white text-xs font-bold px-4 py-2 rounded flex items-center gap-2 hover:bg-slate-700 transition shadow-sm">
-                        <ShoppingCart size={14} /> Amazonで確認
+                      <a href={selectedProduct.amazonUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#FFFFFF' }} className="flex-1 bg-slate-800 text-sm font-black px-4 py-3 rounded flex justify-center items-center gap-2 hover:bg-slate-700 transition shadow-md">
+                        <ShoppingCart size={16} /> Amazonで確認
                       </a>
                     )}
                     {selectedProduct.rakutenUrl && (
-                      <a href={selectedProduct.rakutenUrl} target="_blank" rel="noopener noreferrer" className="bg-[#BF0000] text-white text-xs font-bold px-4 py-2 rounded flex items-center gap-2 hover:bg-[#990000] transition shadow-sm">
-                        <ShoppingCart size={14} /> 楽天で確認
+                      <a href={selectedProduct.rakutenUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#FFFFFF' }} className="flex-1 bg-[#BF0000] text-sm font-black px-4 py-3 rounded flex justify-center items-center gap-2 hover:bg-[#990000] transition shadow-md">
+                        <ShoppingCart size={16} /> 楽天で確認
                       </a>
                     )}
                   </div>
                 )}
                 
                 <div className="mb-8 p-5 bg-white border-l-4 border-mkt-asagi border-y border-r border-slate-200 rounded-r shadow-sm">
-                  <h4 className="text-xs text-mkt-asagi font-black tracking-widest mb-2 flex items-center gap-2"><Quote size={14}/> 公式メインコピー</h4>
+                  <h4 className="text-xs text-mkt-asagi font-black tracking-widest mb-2 flex items-center gap-2"><Quote size={14}/> ブランド メインコピー</h4>
                   <p className="text-lg font-serif italic text-mkt-text-main font-bold leading-relaxed">"{selectedProduct.claims?.copy}"</p>
                 </div>
 
@@ -246,7 +246,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                 </div>
               </div>
 
-              {/* 右側：残酷なファクトチェック（ギャップ分析） */}
               <div className="p-8 lg:w-2/3 flex flex-col bg-mkt-surface overflow-y-auto">
                 <div className="flex justify-between items-center mb-6 border-b border-mkt-border pb-4">
                   <h4 className="font-black tracking-widest text-mkt-text-main flex items-center gap-3 text-xl">
@@ -254,7 +253,8 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   </h4>
                   <div className="flex items-center gap-4">
                     <span className="text-xs font-bold text-mkt-text-sub">分析対象:</span>
-                    <span className="font-black text-yellow-500 text-xl">★ {selectedProduct.averageRating || "-"}</span>
+                    {/* 💥 モーダル内の星も text-2xl に！ */}
+                    <span className="font-black text-yellow-500 text-2xl">★ {selectedProduct.averageRating || "-"}</span>
                   </div>
                 </div>
                 
@@ -262,7 +262,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   <div className="flex-grow flex flex-col items-center justify-center text-mkt-makoto">
                     <Loader2 className="animate-spin mb-6" size={64} />
                     <p className="tracking-widest font-black text-lg animate-pulse">AIによるファクトチェックを実行中...</p>
-                    <p className="text-xs font-bold text-mkt-text-sub mt-4">公式の訴求内容と実際のユーザーレビューを比較・分析しています</p>
+                    <p className="text-xs font-bold text-mkt-text-sub mt-4">ブランドの訴求内容と実際のユーザーレビューを比較・分析しています</p>
                   </div>
                 ) : errorMsg ? (
                   <div className="flex-grow flex items-center justify-center text-mkt-makoto font-bold border border-mkt-makoto/50 p-4 rounded bg-mkt-makoto/5">{errorMsg}</div>
@@ -311,7 +311,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                               <div className="bg-slate-50 p-4 rounded border-l-4 border-mkt-asagi border-y border-r border-slate-100">
-                                <span className="text-[10px] text-mkt-asagi font-black tracking-wider mb-2 block">公式の主張 (理想)</span>
+                                <span className="text-[10px] text-mkt-asagi font-black tracking-wider mb-2 block">ブランドの主張 (理想)</span>
                                 <p className="text-sm font-bold text-mkt-text-main leading-relaxed">{gap.claim}</p>
                               </div>
                               <div className="bg-slate-50 p-4 rounded border-l-4 border-mkt-makoto border-y border-r border-slate-100">
@@ -322,7 +322,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                             
                             <div className="mt-4 bg-mkt-makoto/5 border border-mkt-makoto/20 p-4 rounded-md">
                               <span className="text-xs text-mkt-makoto font-black tracking-widest mb-2 flex items-center gap-2">
-                                <Target size={14} /> SGT 戦略的機会 (狙い目)
+                                <Target size={14} /> 戦略的機会 (狙い目)
                               </span>
                               <p className="text-sm text-mkt-text-main leading-relaxed font-black">{gap.opportunity}</p>
                             </div>
