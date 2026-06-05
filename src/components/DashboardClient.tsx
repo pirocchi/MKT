@@ -137,8 +137,14 @@ export default function DashboardClient({ initialData }: { initialData: Competit
               </div>
               
               <h2 className="text-2xl font-bold mb-1 text-mkt-text-main">{item.brand}</h2>
-              <h3 className="text-mkt-text-sub text-sm mb-5 h-10 font-medium line-clamp-2">{item.name}</h3>
+              <h3 className="text-mkt-text-sub text-sm mb-3 h-10 font-medium line-clamp-2">{item.name}</h3>
               
+              {/* 👑 追加：スペックバッジ（テクノロジー・防水） */}
+              <div className="flex flex-wrap gap-2 mb-4">
+                <span className="text-[10px] bg-mkt-asagi/10 text-mkt-asagi border border-mkt-asagi/30 px-2 py-1 rounded font-black tracking-wider">{item.tech}</span>
+                <span className="text-[10px] bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded font-black tracking-wider">防水: {item.waterproof}</span>
+              </div>
+
               {(item.amazonUrl || item.rakutenUrl) && (
                 <div className="flex gap-3 mb-6">
                   {item.amazonUrl && <a href={item.amazonUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#FFFFFF' }} className="flex-1 bg-slate-800 text-sm font-black py-3 rounded flex justify-center items-center gap-2 hover:bg-slate-700 transition shadow-md"><ShoppingCart size={16} /> Amazon</a>}
@@ -177,15 +183,16 @@ export default function DashboardClient({ initialData }: { initialData: Competit
         })}
       </div>
 
-      {/* 分析モデル選択ダイアログ */}
+      {/* 👑 修正：分析モデル選択ダイアログ（タイトルバーの視認性を完全修正） */}
       {(pendingProduct || pendingPlan) && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-xl w-full max-w-2xl overflow-hidden shadow-2xl">
-            <div className="bg-slate-800 p-6 flex justify-between items-center text-white border-b-4 border-mkt-asagi">
-              <h3 className="text-xl font-bold flex items-center gap-2">
-                <Brain size={24} /> 分析モデルの選択
+          <div className="bg-white rounded-xl w-full max-w-2xl overflow-hidden shadow-2xl border border-mkt-border">
+            <div className="bg-mkt-surface p-6 flex justify-between items-center text-mkt-text-main border-b-4 border-mkt-makoto">
+              <h3 className="text-xl font-black flex items-center gap-3 tracking-widest">
+                <span className="bg-mkt-asagi text-white p-2 rounded-md shadow-sm"><Brain size={20} /></span> 
+                分析モデルの選択
               </h3>
-              <button onClick={() => { setPendingProduct(null); setPendingPlan(false); }} className="hover:text-red-400 transition-colors"><X size={28} /></button>
+              <button onClick={() => { setPendingProduct(null); setPendingPlan(false); }} className="text-slate-400 hover:text-mkt-makoto bg-slate-100 hover:bg-red-50 p-2 rounded-full transition-colors"><X size={24} /></button>
             </div>
             <div className="p-8 bg-slate-50">
               <p className="text-slate-600 font-bold mb-6 text-center">処理の目的と許容できる待機時間に合わせて、使用する人工知能モデルを選択してください。</p>
@@ -200,11 +207,10 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                 <button onClick={() => executeAnalysis('gemini-2.5-pro')} className="bg-white border-2 border-slate-200 p-5 rounded-lg hover:border-mkt-makoto hover:bg-red-50/30 transition-all text-left group flex items-start gap-4">
                   <div className="bg-red-100 p-3 rounded-full text-red-600 group-hover:bg-red-600 group-hover:text-white transition-colors"><Target size={24} /></div>
                   <div>
-                    <h4 className="font-black text-lg text-slate-800 mb-1">安定優先モデル</h4>
+                    <h4 className="font-black text-lg text-slate-800 mb-1">精度優先モデル</h4>
                     <p className="text-sm text-slate-500 font-bold">安定性が高く、時間をかけてより正確な分析を行いたい場合に使用します。</p>
                   </div>
                 </button>
-                {/* 修正箇所：第三の選択肢を 3.1-pro-preview に変更 */}
                 <button onClick={() => executeAnalysis('gemini-3.1-pro-preview')} className="bg-white border-2 border-slate-200 p-5 rounded-lg hover:border-purple-500 hover:bg-purple-50/30 transition-all text-left group flex items-start gap-4">
                   <div className="bg-purple-100 p-3 rounded-full text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-colors"><Cpu size={24} /></div>
                   <div>
@@ -222,9 +228,9 @@ export default function DashboardClient({ initialData }: { initialData: Competit
       {planData && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
           <div className="bg-slate-50 border-2 border-mkt-asagi/50 rounded-2xl w-full max-w-5xl max-h-[95vh] flex flex-col relative overflow-hidden shadow-2xl">
-            <button onClick={() => setPlanData(null)} className="absolute top-4 right-4 text-slate-400 hover:text-mkt-makoto transition-colors z-20 bg-white p-2 rounded-full shadow-md"><X size={28} /></button>
+            <button onClick={() => setPlanData(null)} className="absolute top-4 right-4 text-slate-400 hover:text-mkt-makoto bg-white hover:bg-red-50 p-2 rounded-full transition-colors z-20 shadow-md"><X size={28} /></button>
             
-            <div className="bg-mkt-surface border-b-4 border-mkt-makoto p-8 text-mkt-text-main">
+            <div className="bg-mkt-surface border-b-4 border-mkt-makoto p-8 pr-20 text-mkt-text-main">
               <span className="bg-mkt-asagi text-white text-xs font-bold px-3 py-1 rounded tracking-widest flex items-center gap-2 w-max mb-4 shadow-sm"><FileText size={14}/> 新商品企画案</span>
               <h2 className="text-3xl md:text-4xl font-bold mb-3 leading-tight">{planData.conceptName}</h2>
               <p className="text-mkt-makoto font-bold text-lg">"{planData.mainCopy}"</p>
@@ -262,7 +268,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
       {selectedProduct && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-mkt-surface border border-mkt-border rounded-xl w-full max-w-7xl h-[90vh] flex flex-col relative overflow-hidden shadow-2xl">
-            <button onClick={() => setSelectedProduct(null)} className="absolute top-4 right-4 text-mkt-text-sub hover:text-mkt-makoto transition-colors z-20 bg-slate-100 hover:bg-slate-200 p-1 rounded-full shadow-sm"><X size={28} /></button>
+            <button onClick={() => setSelectedProduct(null)} className="absolute top-4 right-4 text-mkt-text-sub hover:text-mkt-makoto transition-colors z-20 bg-slate-100 hover:bg-slate-200 p-2 rounded-full shadow-sm"><X size={28} /></button>
 
             <div className="flex flex-col lg:flex-row h-full overflow-hidden">
               <div className="p-8 lg:w-1/3 border-r border-mkt-border bg-slate-50 overflow-y-auto relative">
@@ -286,12 +292,15 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   </div>
                 )}
                 
-                <div className="mb-8 p-5 bg-white border-l-4 border-mkt-asagi border-y border-r border-slate-200 rounded-r shadow-sm">
-                  <h4 className="text-xs text-mkt-asagi font-bold tracking-widest mb-2 flex items-center gap-2"><Quote size={14}/> 公式広告文案</h4>
-                  <p className="text-lg font-serif italic text-mkt-text-main font-bold leading-relaxed">"{selectedProduct.claims?.copy}"</p>
+                {/* 👑 追加：ハードウェア仕様セクション */}
+                <h4 className="text-sm font-black text-mkt-text-sub tracking-widest border-b border-mkt-border pb-2 mb-4 mt-8">ハードウェア仕様</h4>
+                <div className="space-y-4 mb-8">
+                  <div><span className="text-xs text-slate-500 font-bold block mb-1">搭載テクノロジー</span><p className="text-sm font-bold text-mkt-text-main">{selectedProduct.tech}</p></div>
+                  <div><span className="text-xs text-slate-500 font-bold block mb-1">防水規格</span><p className="text-sm font-bold text-mkt-text-main">{selectedProduct.waterproof}</p></div>
+                  <div><span className="text-xs text-slate-500 font-bold block mb-1">ピン仕様</span><p className="text-sm font-bold text-mkt-text-main leading-relaxed">{selectedProduct.pins}</p></div>
                 </div>
 
-                <h4 className="text-sm font-bold text-mkt-text-sub tracking-widest border-b border-mkt-border pb-2 mb-4">公式設定の訴求内容</h4>
+                <h4 className="text-sm font-black text-mkt-text-sub tracking-widest border-b border-mkt-border pb-2 mb-4">公式設定の訴求内容</h4>
                 <div className="space-y-5">
                   <div><span className="text-xs text-slate-500 font-bold block mb-1">対象顧客</span><p className="text-sm font-bold text-mkt-text-main">{selectedProduct.claims?.target}</p></div>
                   <div><span className="text-xs text-slate-500 font-bold block mb-1">訴求事項</span><p className="text-sm font-bold text-mkt-text-main">{selectedProduct.claims?.problem}</p></div>
@@ -299,10 +308,16 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   <div><span className="text-xs text-slate-500 font-bold block mb-1">痛みのなさの主張</span><p className="text-sm font-bold text-mkt-text-main">{selectedProduct.claims?.pain}</p></div>
                   <div><span className="text-xs text-slate-500 font-bold block mb-1">手軽さの主張</span><p className="text-sm font-bold text-mkt-text-main">{selectedProduct.claims?.ease}</p></div>
                 </div>
+                
+                <div className="mb-8 mt-8 p-5 bg-white border-l-4 border-mkt-asagi border-y border-r border-slate-200 rounded-r shadow-sm">
+                  <h4 className="text-xs text-mkt-asagi font-bold tracking-widest mb-2 flex items-center gap-2"><Quote size={14}/> 公式広告文案</h4>
+                  <p className="text-lg font-serif italic text-mkt-text-main font-bold leading-relaxed">"{selectedProduct.claims?.copy}"</p>
+                </div>
               </div>
 
               <div className="p-8 lg:w-2/3 flex flex-col bg-mkt-surface overflow-y-auto">
-                <div className="flex justify-between items-center mb-6 border-b border-mkt-border pb-4">
+                {/* 👑 修正：右側のヘッダーに pr-12 の余白をつけ、右上の×ボタンと干渉しないように防御！ */}
+                <div className="flex justify-between items-center mb-6 border-b border-mkt-border pb-4 pr-12">
                   <h4 className="font-bold tracking-widest text-mkt-text-main flex items-center gap-3 text-xl">
                     <Crosshair className="text-mkt-makoto" /> 比較分析結果
                   </h4>
