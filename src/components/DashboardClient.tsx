@@ -79,7 +79,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
     return "bg-slate-100 text-slate-600 border-slate-300";
   };
 
-  // 👑 SGT自動判定：生のレビューデータを解析し、Amazonと楽天に分類・集計する処理
   const { processedReviews, reviewSummary } = React.useMemo(() => {
     if (!selectedProduct || !selectedProduct.rawReviews) return { processedReviews: [], reviewSummary: null };
     try {
@@ -91,16 +90,14 @@ export default function DashboardClient({ initialData }: { initialData: Competit
 
       const processed = parsed.map((rev: any) => {
         let p = rev.platform || "";
-        // プラットフォームが欠落していても、日付の「日本でレビュー済み」フォーマットでAmazonを強制判定
         if (p.toLowerCase().includes("amazon") || (rev.date && rev.date.includes("日本でレビュー済み"))) {
           p = "Amazon";
         } else if (p.includes("楽天") || p.toLowerCase().includes("rakuten")) {
           p = "楽天市場";
         } else {
-          p = "Amazon"; // どちらにも該当しない場合の暫定処理（既存のスクレイピングデータ比率に基づく）
+          p = "Amazon";
         }
 
-        // 星評価の文字列（例: "5つ星のうち4.0"）から数値を抽出
         const scoreMatch = String(rev.rating).match(/([0-9.]+)/);
         const score = scoreMatch ? parseFloat(scoreMatch[1]) : 0;
 
@@ -438,7 +435,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   <div className="flex-grow flex items-center justify-center font-bold text-mkt-text-sub">分析データがありません</div>
                 )}
 
-                {/* 👑 追加：プラットフォーム別レビュー統計パネル */}
+                {/* 👑 完全改修：統計パネルに「インライン白文字装甲」を追加！ */}
                 {!isAnalyzing && !errorMsg && reviewSummary && processedReviews.length > 0 && (
                   <div className="mt-12 pt-8 border-t-4 border-slate-100 animate-in fade-in duration-500">
                     <h4 className="font-bold tracking-widest text-mkt-text-main flex items-center gap-3 text-xl mb-6">
@@ -446,29 +443,33 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                     </h4>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-                      {/* Amazon 統計カード */}
-                      <div className="bg-slate-800 text-white p-5 rounded-lg flex justify-between items-center shadow-md border border-slate-700">
+                      {/* Amazon 統計カード（白文字固定） */}
+                      <div className="bg-slate-800 p-5 rounded-lg flex justify-between items-center shadow-md border border-slate-700" style={{ color: '#FFFFFF' }}>
                         <div className="flex items-center gap-3">
-                          <ShoppingCart size={24} className="text-slate-300" />
-                          <span className="font-black tracking-widest text-lg">Amazon</span>
+                          <ShoppingCart size={24} style={{ color: '#CBD5E1' }} />
+                          <span className="font-black tracking-widest text-lg" style={{ color: '#FFFFFF' }}>Amazon</span>
                         </div>
                         <div className="text-right">
-                          <div className="text-3xl font-black mb-1">{reviewSummary.Amazon.count.toLocaleString()} <span className="text-sm font-bold text-slate-400">件</span></div>
-                          <div className="text-yellow-400 font-bold">
+                          <div className="text-3xl font-black mb-1" style={{ color: '#FFFFFF' }}>
+                            {reviewSummary.Amazon.count.toLocaleString()} <span className="text-sm font-bold" style={{ color: '#CBD5E1' }}>件</span>
+                          </div>
+                          <div className="font-bold" style={{ color: '#FACC15' }}>
                             平均 ★ {reviewSummary.Amazon.validCount > 0 ? (reviewSummary.Amazon.totalScore / reviewSummary.Amazon.validCount).toFixed(1) : "-"}
                           </div>
                         </div>
                       </div>
                       
-                      {/* 楽天市場 統計カード */}
-                      <div className="bg-[#BF0000] text-white p-5 rounded-lg flex justify-between items-center shadow-md border border-[#990000]">
+                      {/* 楽天市場 統計カード（白文字固定） */}
+                      <div className="bg-[#BF0000] p-5 rounded-lg flex justify-between items-center shadow-md border border-[#990000]" style={{ color: '#FFFFFF' }}>
                         <div className="flex items-center gap-3">
-                          <ShoppingCart size={24} className="text-red-200" />
-                          <span className="font-black tracking-widest text-lg">楽天市場</span>
+                          <ShoppingCart size={24} style={{ color: '#FECACA' }} />
+                          <span className="font-black tracking-widest text-lg" style={{ color: '#FFFFFF' }}>楽天市場</span>
                         </div>
                         <div className="text-right">
-                          <div className="text-3xl font-black mb-1">{reviewSummary.Rakuten.count.toLocaleString()} <span className="text-sm font-bold text-red-200">件</span></div>
-                          <div className="text-yellow-300 font-bold">
+                          <div className="text-3xl font-black mb-1" style={{ color: '#FFFFFF' }}>
+                            {reviewSummary.Rakuten.count.toLocaleString()} <span className="text-sm font-bold" style={{ color: '#FECACA' }}>件</span>
+                          </div>
+                          <div className="font-bold" style={{ color: '#FDE047' }}>
                             平均 ★ {reviewSummary.Rakuten.validCount > 0 ? (reviewSummary.Rakuten.totalScore / reviewSummary.Rakuten.validCount).toFixed(1) : "-"}
                           </div>
                         </div>
@@ -484,8 +485,11 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                         <div key={idx} className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm hover:border-mkt-asagi/30 transition-colors">
                           <div className="flex justify-between items-start mb-4 border-b border-slate-100 pb-3">
                             <div className="flex items-center gap-4">
-                              {/* 👑 修正：Amazonと楽天を直感的に区別できる大型バッジ */}
-                              <span className={`text-xs font-black px-3 py-1.5 rounded flex items-center gap-1.5 shadow-sm ${rev.displayPlatform === 'Amazon' ? 'bg-slate-800 text-white' : rev.displayPlatform === '楽天市場' ? 'bg-[#BF0000] text-white' : 'bg-slate-500 text-white'}`}>
+                              {/* 👑 バッジにも白文字装甲を追加！ */}
+                              <span 
+                                className={`text-xs font-black px-3 py-1.5 rounded flex items-center gap-1.5 shadow-sm ${rev.displayPlatform === 'Amazon' ? 'bg-slate-800' : rev.displayPlatform === '楽天市場' ? 'bg-[#BF0000]' : 'bg-slate-500'}`}
+                                style={{ color: '#FFFFFF' }}
+                              >
                                 <ShoppingCart size={14} />
                                 {rev.displayPlatform}
                               </span>
