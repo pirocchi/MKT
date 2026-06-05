@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Activity, Eye, X, Loader2, Target, Crosshair, Quote, Image as ImageIcon, ShoppingCart, CheckSquare, Square, FileText, Zap, Brain, Cpu, MessageCircle, BarChart3, Filter, Calendar, ArrowUpDown } from 'lucide-react';
+import { Activity, Eye, X, Loader2, Target, Crosshair, Quote, Image as ImageIcon, ShoppingCart, CheckSquare, Square, FileText, Zap, Brain, Cpu, MessageCircle, BarChart3, Filter, Calendar, ArrowUpDown, Star } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 type Competitor = {
@@ -25,10 +25,11 @@ export default function DashboardClient({ initialData }: { initialData: Competit
   const [pendingProduct, setPendingProduct] = useState<Competitor | null>(null);
   const [pendingPlan, setPendingPlan] = useState<boolean>(false);
 
-  // 👑 追加：レビューのフィルター・ソート・表示件数用の状態管理
+  // 👑 レビューのフィルター・ソート用の状態管理
   const [visibleReviewCount, setVisibleReviewCount] = useState<number>(50);
   const [filterPlatform, setFilterPlatform] = useState<string>('ALL');
   const [filterPeriod, setFilterPeriod] = useState<string>('ALL');
+  const [filterRating, setFilterRating] = useState<string>('ALL'); // 👑 追加：星の数での絞り込み
   const [sortOrder, setSortOrder] = useState<string>('DATE_DESC');
 
   const executeAnalysis = async (modelType: string) => {
@@ -39,10 +40,11 @@ export default function DashboardClient({ initialData }: { initialData: Competit
       setAnalyzedData(null); 
       setErrorMsg("");
       
-      // 分析を開くたびにフィルターと表示件数をリセット
+      // 分析を開くたびにフィルターを完全リセット
       setVisibleReviewCount(50);
       setFilterPlatform('ALL');
       setFilterPeriod('ALL');
+      setFilterRating('ALL');
       setSortOrder('DATE_DESC');
       
       setIsAnalyzing(true);
@@ -88,7 +90,12 @@ export default function DashboardClient({ initialData }: { initialData: Competit
     return "bg-slate-100 text-slate-600 border-slate-300";
   };
 
-  // 👑 追加：日付文字列から正確な日付を抽出するパサー関数
+  // 👑 追加：スコアを「★と☆」に変換する関数
+  const renderStars = (score: number) => {
+    const filled = Math.max(0, Math.min(5, Math.floor(score)));
+    return '★'.repeat(filled) + '☆'.repeat(5 - filled);
+  };
+
   const parseReviewDate = (dateStr: string) => {
     if (!dateStr) return null;
     let match = dateStr.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/);
@@ -98,7 +105,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
     return null;
   };
 
-  // 1. まず全データをパースして基礎データと統計を作る
   const { baseReviews, reviewSummary } = React.useMemo(() => {
     if (!selectedProduct || !selectedProduct.rawReviews) return { baseReviews: [], reviewSummary: null };
     try {
@@ -139,13 +145,19 @@ export default function DashboardClient({ initialData }: { initialData: Competit
     }
   }, [selectedProduct]);
 
-  // 👑 2. UIの操作に応じてフィルターとソートを実行する
+  // UIの操作に応じてフィルターとソートを実行する
   const filteredAndSortedReviews = React.useMemo(() => {
     let result = [...baseReviews];
 
     // プラットフォーム絞り込み
     if (filterPlatform !== 'ALL') {
       result = result.filter(r => r.displayPlatform === filterPlatform);
+    }
+
+    // 👑 評価（星の数）絞り込み
+    if (filterRating !== 'ALL') {
+      const targetScore = parseInt(filterRating);
+      result = result.filter(r => Math.floor(r.score) === targetScore);
     }
 
     // 期間絞り込み
@@ -167,7 +179,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
     });
 
     return result;
-  }, [baseReviews, filterPlatform, filterPeriod, sortOrder]);
+  }, [baseReviews, filterPlatform, filterPeriod, filterRating, sortOrder]);
 
 
   return (
@@ -530,17 +542,46 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                       <MessageCircle className="text-mkt-asagi" /> 顧客評価一覧（生データ）
                     </h4>
 
-                    {/* 👑 追加：フィルター＆ソート コントロールバー */}
+                    {/* 👑 修正：フィルター＆ソート コントロールバー（ボタンの視認性向上と星フィルターの追加） */}
                     <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg mb-6 flex flex-col xl:flex-row gap-4 items-start xl:items-center justify-between shadow-sm">
                       {/* プラットフォーム切替 */}
                       <div className="flex items-center gap-1 bg-slate-200/70 p-1 rounded-md">
-                        <button onClick={() => { setFilterPlatform('ALL'); setVisibleReviewCount(50); }} className={`px-4 py-1.5 rounded text-sm font-bold transition-all ${filterPlatform === 'ALL' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-800'}`}>全体</button>
-                        <button onClick={() => { setFilterPlatform('Amazon'); setVisibleReviewCount(50); }} className={`px-4 py-1.5 rounded text-sm font-bold transition-all ${filterPlatform === 'Amazon' ? 'bg-slate-800 shadow text-white' : 'text-slate-500 hover:text-slate-800'}`}>Amazon</button>
-                        <button onClick={() => { setFilterPlatform('楽天市場'); setVisibleReviewCount(50); }} className={`px-4 py-1.5 rounded text-sm font-bold transition-all ${filterPlatform === '楽天市場' ? 'bg-[#BF0000] shadow text-white' : 'text-slate-500 hover:text-slate-800'}`}>楽天市場</button>
+                        <button 
+                          onClick={() => { setFilterPlatform('ALL'); setVisibleReviewCount(50); }} 
+                          className={`px-4 py-1.5 rounded text-sm font-black transition-all ${filterPlatform === 'ALL' ? 'bg-white shadow border border-slate-300' : 'hover:bg-slate-300/50'}`}
+                          style={filterPlatform === 'ALL' ? { color: '#0F172A' } : { color: '#475569' }}
+                        >
+                          全体
+                        </button>
+                        <button 
+                          onClick={() => { setFilterPlatform('Amazon'); setVisibleReviewCount(50); }} 
+                          className={`px-4 py-1.5 rounded text-sm font-black transition-all ${filterPlatform === 'Amazon' ? 'bg-slate-800 shadow' : 'hover:bg-slate-300/50'}`}
+                          style={filterPlatform === 'Amazon' ? { color: '#FFFFFF' } : { color: '#475569' }}
+                        >
+                          Amazon
+                        </button>
+                        <button 
+                          onClick={() => { setFilterPlatform('楽天市場'); setVisibleReviewCount(50); }} 
+                          className={`px-4 py-1.5 rounded text-sm font-black transition-all ${filterPlatform === '楽天市場' ? 'bg-[#BF0000] shadow' : 'hover:bg-slate-300/50'}`}
+                          style={filterPlatform === '楽天市場' ? { color: '#FFFFFF' } : { color: '#475569' }}
+                        >
+                          楽天市場
+                        </button>
                       </div>
                       
-                      {/* 期間とソート */}
+                      {/* 期間と星とソート */}
                       <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
+                        <div className="flex flex-1 xl:flex-none items-center gap-2 bg-white border border-slate-300 rounded-md px-3 py-2 shadow-sm focus-within:border-mkt-asagi transition-colors">
+                          <Star size={16} className="text-slate-400 flex-shrink-0" />
+                          <select value={filterRating} onChange={(e) => { setFilterRating(e.target.value); setVisibleReviewCount(50); }} className="w-full bg-transparent text-sm font-bold text-slate-700 outline-none cursor-pointer">
+                            <option value="ALL">すべての評価</option>
+                            <option value="5">★★★★★ のみ</option>
+                            <option value="4">★★★★☆ のみ</option>
+                            <option value="3">★★★☆☆ のみ</option>
+                            <option value="2">★★☆☆☆ のみ</option>
+                            <option value="1">★☆☆☆☆ のみ</option>
+                          </select>
+                        </div>
                         <div className="flex flex-1 xl:flex-none items-center gap-2 bg-white border border-slate-300 rounded-md px-3 py-2 shadow-sm focus-within:border-mkt-asagi transition-colors">
                           <Calendar size={16} className="text-slate-400 flex-shrink-0" />
                           <select value={filterPeriod} onChange={(e) => { setFilterPeriod(e.target.value); setVisibleReviewCount(50); }} className="w-full bg-transparent text-sm font-bold text-slate-700 outline-none cursor-pointer">
@@ -578,7 +619,8 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                                   <ShoppingCart size={14} />
                                   {rev.displayPlatform}
                                 </span>
-                                <span className="text-yellow-500 font-black tracking-wider text-lg">{rev.rating}</span>
+                                {/* 👑 修正：星の数を「★★★★☆」のような視覚的アイコンで表現！ */}
+                                <span className="text-yellow-500 font-black tracking-widest text-lg">{renderStars(rev.score)}</span>
                               </div>
                               <span className="text-xs font-bold text-slate-400">{rev.date}</span>
                             </div>
