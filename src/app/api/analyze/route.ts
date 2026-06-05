@@ -3,15 +3,14 @@ import { analyzeReviewSentiment } from '@/lib/gemini';
 
 export async function POST(request: Request) {
   try {
-    // 👑 フロントから reviewsText と claims の両方を受け取る！
-    const { reviewsText, claims, averageRating } = await request.json();
+    const { reviewsText, claims, averageRating, model } = await request.json();
 
     if (!reviewsText || reviewsText.trim() === "") {
       return NextResponse.json({ error: "レビューテキストがありません" }, { status: 400 });
     }
 
-    // 両方のデータをGeminiに放り込む！
-    const result = await analyzeReviewSentiment(reviewsText, claims, averageRating);
+    // モデル名を引数に追加してGeminiに渡す
+    const result = await analyzeReviewSentiment(reviewsText, claims, averageRating, model);
 
     if (!result) {
       return NextResponse.json({ error: "AI解析に失敗しました" }, { status: 500 });

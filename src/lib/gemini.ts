@@ -3,8 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const apiKey = process.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
-// 👑 個別製品のギャップ分析機能
-export async function analyzeReviewSentiment(reviewsText: string, claims: any, averageRating: string) {
+export async function analyzeReviewSentiment(reviewsText: string, claims: any, averageRating: string, modelName: string = "gemini-3.5-flash") {
   if (!apiKey) {
     console.warn("⚠️ GEMINI_API_KEYが設定されていません。");
     return null;
@@ -12,10 +11,10 @@ export async function analyzeReviewSentiment(reviewsText: string, claims: any, a
 
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-3.5-flash", // 👑 ヒロム様ご指定の神速エンジンで完全固定！
+      model: modelName, 
       generationConfig: {
         responseMimeType: "application/json",
-        temperature: 0.2, // 客観的で論理的な分析を強制
+        temperature: 0.2, 
       },
     });
 
@@ -63,12 +62,11 @@ export async function analyzeReviewSentiment(reviewsText: string, claims: any, a
     3. 返却するデータはJSON文字列のみとし、マークダウン記法（\`\`\`json など）は絶対に含めないでください。
     `;
 
-    console.log("[SGT-Brain] 個別ギャップ分析を実行中...");
+    console.log(`[System Log] ${modelName} を使用して個別ギャップ分析を実行中...`);
 
     const result = await model.generateContent(prompt);
     let responseText = result.response.text();
     
-    // 💥 万が一のマークダウン装飾を除去し、確実にJSON部分のみを抽出する安全処理
     responseText = responseText.replace(/^\`\`\`json\n?/, "").replace(/\n?\`\`\`$/, "").trim();
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     
@@ -80,20 +78,18 @@ export async function analyzeReviewSentiment(reviewsText: string, claims: any, a
   }
 }
 
-// 👑 複数製品を比較分析し、新商品の企画案を作成する機能（旧：創世モジュール）
-export async function generateProductPlan(products: any[]) {
+export async function generateProductPlan(products: any[], modelName: string = "gemini-3.5-flash") {
   if (!apiKey) return null;
 
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-3.5-flash", // 👑 こちらも指定モデルで完全固定！
+      model: modelName, 
       generationConfig: {
         responseMimeType: "application/json",
-        temperature: 0.5, // 企画のアイデア出しのため、適度な創造性を持たせる
+        temperature: 0.5, 
       },
     });
 
-    // 選択された製品データを文字列に変換
     const productsInfo = products.map((p, index) => `
       【比較対象${index + 1}】
       ■ブランド: ${p.brand}
@@ -133,12 +129,11 @@ export async function generateProductPlan(products: any[]) {
     返却するデータはJSON文字列のみとし、マークダウン記法（\`\`\`json など）は絶対に含めないでください。
     `;
 
-    console.log("[SGT-Brain] 新商品企画案の作成を実行中...");
+    console.log(`[System Log] ${modelName} を使用して新商品企画案の作成を実行中...`);
 
     const result = await model.generateContent(prompt);
     let responseText = result.response.text();
     
-    // 💥 万が一のマークダウン装飾を除去し、確実にJSON部分のみを抽出する安全処理
     responseText = responseText.replace(/^\`\`\`json\n?/, "").replace(/\n?\`\`\`$/, "").trim();
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     
