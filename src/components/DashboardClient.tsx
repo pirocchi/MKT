@@ -195,27 +195,27 @@ export default function DashboardClient({ initialData }: { initialData: Competit
               <button onClick={() => { setPendingProduct(null); setPendingPlan(false); }} className="text-slate-400 hover:text-mkt-makoto bg-slate-100 hover:bg-red-50 p-2 rounded-full transition-colors"><X size={24} /></button>
             </div>
             <div className="p-8 bg-slate-50">
-              <p className="text-slate-600 font-bold mb-6 text-center">処理の目的と許容できる待機時間に合わせて、使用する人工知能モデルを選択してください。</p>
+              <p className="text-slate-600 font-bold mb-6 text-center">目的に合わせてAIモデルを選択してください。</p>
               <div className="grid grid-cols-1 gap-4">
                 <button onClick={() => executeAnalysis('gemini-3.5-flash')} className="bg-white border-2 border-slate-200 p-5 rounded-lg hover:border-mkt-asagi hover:bg-blue-50/30 transition-all text-left group flex items-start gap-4">
                   <div className="bg-blue-100 p-3 rounded-full text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors"><Zap size={24} /></div>
                   <div>
                     <h4 className="font-black text-lg text-slate-800 mb-1">速度優先モデル</h4>
-                    <p className="text-sm text-slate-500 font-bold">素早く状況を確認したい場合に使用します。数秒〜十数秒で結果を出力します。</p>
+                    <p className="text-sm text-slate-500 font-bold">素早く状況を確認したい場合。</p>
                   </div>
                 </button>
                 <button onClick={() => executeAnalysis('gemini-2.5-pro')} className="bg-white border-2 border-slate-200 p-5 rounded-lg hover:border-mkt-makoto hover:bg-red-50/30 transition-all text-left group flex items-start gap-4">
                   <div className="bg-red-100 p-3 rounded-full text-red-600 group-hover:bg-red-600 group-hover:text-white transition-colors"><Target size={24} /></div>
                   <div>
                     <h4 className="font-black text-lg text-slate-800 mb-1">精度優先モデル</h4>
-                    <p className="text-sm text-slate-500 font-bold">安定性が高く、時間をかけてより正確な分析を行いたい場合に使用します。</p>
+                    <p className="text-sm text-slate-500 font-bold">時間をかけてより正確な分析を行いたい場合。</p>
                   </div>
                 </button>
                 <button onClick={() => executeAnalysis('gemini-3.1-pro-preview')} className="bg-white border-2 border-slate-200 p-5 rounded-lg hover:border-purple-500 hover:bg-purple-50/30 transition-all text-left group flex items-start gap-4">
                   <div className="bg-purple-100 p-3 rounded-full text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-colors"><Cpu size={24} /></div>
                   <div>
                     <h4 className="font-black text-lg text-slate-800 mb-1">推論優先モデル</h4>
-                    <p className="text-sm text-slate-500 font-bold">複雑な論理展開や深い分析が必要な場合に使用します。</p>
+                    <p className="text-sm text-slate-500 font-bold">複雑な論理展開や深い分析が必要な場合。</p>
                   </div>
                 </button>
               </div>
