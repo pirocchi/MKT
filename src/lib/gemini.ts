@@ -21,7 +21,7 @@ export async function analyzeReviewSentiment(reviewsText: string, claims: any, a
     const safeClaims = claims || {};
 
     const prompt = `
-    あなたはAmazonスポンサー広告の統合運用システム「SAGITTARIUS（SGT）」のデータ分析モジュールです。
+    あなたは競合製品やレビューを分析するプロのマーケター兼インサイトアナリストです。
     以下の「ブランド公式の訴求内容」と、実際の「顧客のレビュー（評価）」を比較分析してください。
 
     【ブランド公式の訴求内容】
