@@ -10,7 +10,10 @@ type Competitor = {
 };
 type GapAnalysis = { theme: string; claim: string; reality: string; assessment: string; opportunity: string; };
 type SentimentData = { sentiments: { name: string; value: number; color: string }[]; gapAnalysis: GapAnalysis[]; };
-type ProductPlan = { conceptName: string; targetPrice: string; coreFeatures: string[]; differentiation: string; mainCopy: string; };
+
+type ProductPlan = {
+  conceptName: string; targetPrice: string; coreFeatures: string[]; differentiation: string; mainCopy: string;
+};
 
 export default function DashboardClient({ initialData }: { initialData: Competitor[] }) {
   const [selectedProduct, setSelectedProduct] = useState<Competitor | null>(null);
@@ -75,6 +78,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
 
   return (
     <div className="min-h-screen bg-mkt-bg text-mkt-text-main p-8 font-sans relative">
+      
       <header className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-mkt-border pb-6 mb-8 gap-4">
         <div>
           <h1 className="text-4xl font-bold tracking-wider flex items-center gap-3">
@@ -113,9 +117,11 @@ export default function DashboardClient({ initialData }: { initialData: Competit
           const isSelected = selectedForPlan.some(p => p.id === item.id);
           return (
             <div key={item.id || index} className={`bg-mkt-surface border-2 rounded-lg p-6 relative overflow-hidden group transition-all duration-300 flex flex-col shadow-sm ${isSelected ? 'border-mkt-makoto bg-mkt-makoto/5' : 'border-mkt-border hover:border-mkt-asagi'}`}>
+              
               <button onClick={() => togglePlanSelection(item)} className="absolute top-4 right-4 z-10 transition-colors">
                 {isSelected ? <CheckSquare size={28} className="text-mkt-makoto bg-white rounded" /> : <Square size={28} className="text-slate-300 hover:text-mkt-makoto bg-white rounded" />}
               </button>
+
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-mkt-makoto to-mkt-asagi opacity-75"></div>
               
               <div className="w-full h-48 mb-5 bg-slate-50 border border-slate-100 rounded-md flex items-center justify-center overflow-hidden relative mt-4">
@@ -129,6 +135,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
               <div className="flex justify-between items-start mb-4">
                 <span className="text-xs font-bold text-white bg-mkt-asagi px-2 py-1 rounded">{item.classification}</span>
               </div>
+              
               <h2 className="text-2xl font-bold mb-1 text-mkt-text-main">{item.brand}</h2>
               <h3 className="text-mkt-text-sub text-sm mb-5 h-10 font-medium line-clamp-2">{item.name}</h3>
               
@@ -193,15 +200,16 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                 <button onClick={() => executeAnalysis('gemini-2.5-pro')} className="bg-white border-2 border-slate-200 p-5 rounded-lg hover:border-mkt-makoto hover:bg-red-50/30 transition-all text-left group flex items-start gap-4">
                   <div className="bg-red-100 p-3 rounded-full text-red-600 group-hover:bg-red-600 group-hover:text-white transition-colors"><Target size={24} /></div>
                   <div>
-                    <h4 className="font-black text-lg text-slate-800 mb-1">精度優先モデル</h4>
+                    <h4 className="font-black text-lg text-slate-800 mb-1">安定優先モデル</h4>
                     <p className="text-sm text-slate-500 font-bold">安定性が高く、時間をかけてより正確な分析を行いたい場合に使用します。</p>
                   </div>
                 </button>
-                <button onClick={() => executeAnalysis('deep-research-max-preview-04-2026')} className="bg-white border-2 border-slate-200 p-5 rounded-lg hover:border-purple-500 hover:bg-purple-50/30 transition-all text-left group flex items-start gap-4">
+                {/* 修正箇所：第三の選択肢を 3.1-pro-preview に変更 */}
+                <button onClick={() => executeAnalysis('gemini-3.1-pro-preview')} className="bg-white border-2 border-slate-200 p-5 rounded-lg hover:border-purple-500 hover:bg-purple-50/30 transition-all text-left group flex items-start gap-4">
                   <div className="bg-purple-100 p-3 rounded-full text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-colors"><Cpu size={24} /></div>
                   <div>
-                    <h4 className="font-black text-lg text-slate-800 mb-1">推論特化モデル</h4>
-                    <p className="text-sm text-slate-500 font-bold">顧客の背後にある意図など、深い論理的推論や調査を重視する場合に適しています。</p>
+                    <h4 className="font-black text-lg text-slate-800 mb-1">推論優先モデル</h4>
+                    <p className="text-sm text-slate-500 font-bold">複雑な論理展開や深い分析が必要な場合に使用します。</p>
                   </div>
                 </button>
               </div>
@@ -215,11 +223,13 @@ export default function DashboardClient({ initialData }: { initialData: Competit
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
           <div className="bg-slate-50 border-2 border-mkt-asagi/50 rounded-2xl w-full max-w-5xl max-h-[95vh] flex flex-col relative overflow-hidden shadow-2xl">
             <button onClick={() => setPlanData(null)} className="absolute top-4 right-4 text-slate-400 hover:text-mkt-makoto transition-colors z-20 bg-white p-2 rounded-full shadow-md"><X size={28} /></button>
+            
             <div className="bg-mkt-surface border-b-4 border-mkt-makoto p-8 text-mkt-text-main">
               <span className="bg-mkt-asagi text-white text-xs font-bold px-3 py-1 rounded tracking-widest flex items-center gap-2 w-max mb-4 shadow-sm"><FileText size={14}/> 新商品企画案</span>
               <h2 className="text-3xl md:text-4xl font-bold mb-3 leading-tight">{planData.conceptName}</h2>
               <p className="text-mkt-makoto font-bold text-lg">"{planData.mainCopy}"</p>
             </div>
+
             <div className="p-8 overflow-y-auto flex-grow flex flex-col gap-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
@@ -231,6 +241,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   <p className="text-base font-bold text-slate-700 leading-relaxed whitespace-pre-wrap break-words">{planData.differentiation}</p>
                 </div>
               </div>
+
               <div className="bg-slate-50 p-6 rounded-xl border border-mkt-border">
                 <h4 className="text-sm text-mkt-text-main font-bold tracking-widest mb-4 border-b border-slate-200 pb-2">必須機能要件</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -252,28 +263,34 @@ export default function DashboardClient({ initialData }: { initialData: Competit
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-mkt-surface border border-mkt-border rounded-xl w-full max-w-7xl h-[90vh] flex flex-col relative overflow-hidden shadow-2xl">
             <button onClick={() => setSelectedProduct(null)} className="absolute top-4 right-4 text-mkt-text-sub hover:text-mkt-makoto transition-colors z-20 bg-slate-100 hover:bg-slate-200 p-1 rounded-full shadow-sm"><X size={28} /></button>
+
             <div className="flex flex-col lg:flex-row h-full overflow-hidden">
               <div className="p-8 lg:w-1/3 border-r border-mkt-border bg-slate-50 overflow-y-auto relative">
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-xs font-bold text-white bg-mkt-asagi px-2 py-1 rounded shadow-sm">{selectedProduct.classification}</span>
                 </div>
+
                 {selectedProduct.imageUrl && (
                   <div className="w-full h-48 mb-6 bg-white border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden shadow-sm">
                     <img src={selectedProduct.imageUrl} alt={selectedProduct.name} className="object-contain w-full h-full p-4 mix-blend-multiply" />
                   </div>
                 )}
+                
                 <h2 className="text-3xl font-bold mb-1 text-mkt-text-main">{selectedProduct.brand}</h2>
                 <h3 className="text-mkt-text-sub font-bold text-lg mb-6">{selectedProduct.name}</h3>
+
                 {(selectedProduct.amazonUrl || selectedProduct.rakutenUrl) && (
                   <div className="flex gap-3 mb-8">
                     {selectedProduct.amazonUrl && <a href={selectedProduct.amazonUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#FFFFFF' }} className="flex-1 bg-slate-800 text-sm font-black px-4 py-3 rounded flex justify-center items-center gap-2 hover:bg-slate-700 transition shadow-md"><ShoppingCart size={16} /> Amazonで確認</a>}
                     {selectedProduct.rakutenUrl && <a href={selectedProduct.rakutenUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#FFFFFF' }} className="flex-1 bg-[#BF0000] text-sm font-black px-4 py-3 rounded flex justify-center items-center gap-2 hover:bg-[#990000] transition shadow-md"><ShoppingCart size={16} /> 楽天で確認</a>}
                   </div>
                 )}
+                
                 <div className="mb-8 p-5 bg-white border-l-4 border-mkt-asagi border-y border-r border-slate-200 rounded-r shadow-sm">
                   <h4 className="text-xs text-mkt-asagi font-bold tracking-widest mb-2 flex items-center gap-2"><Quote size={14}/> 公式広告文案</h4>
                   <p className="text-lg font-serif italic text-mkt-text-main font-bold leading-relaxed">"{selectedProduct.claims?.copy}"</p>
                 </div>
+
                 <h4 className="text-sm font-bold text-mkt-text-sub tracking-widest border-b border-mkt-border pb-2 mb-4">公式設定の訴求内容</h4>
                 <div className="space-y-5">
                   <div><span className="text-xs text-slate-500 font-bold block mb-1">対象顧客</span><p className="text-sm font-bold text-mkt-text-main">{selectedProduct.claims?.target}</p></div>
@@ -283,6 +300,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   <div><span className="text-xs text-slate-500 font-bold block mb-1">手軽さの主張</span><p className="text-sm font-bold text-mkt-text-main">{selectedProduct.claims?.ease}</p></div>
                 </div>
               </div>
+
               <div className="p-8 lg:w-2/3 flex flex-col bg-mkt-surface overflow-y-auto">
                 <div className="flex justify-between items-center mb-6 border-b border-mkt-border pb-4">
                   <h4 className="font-bold tracking-widest text-mkt-text-main flex items-center gap-3 text-xl">
@@ -293,6 +311,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                     <span className="font-bold text-yellow-500 text-2xl">★ {selectedProduct.averageRating || "-"}</span>
                   </div>
                 </div>
+                
                 {isAnalyzing ? (
                   <div className="flex-grow flex flex-col items-center justify-center text-mkt-makoto">
                     <Loader2 className="animate-spin mb-6" size={64} />
@@ -303,6 +322,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   <div className="flex-grow flex items-center justify-center text-mkt-makoto font-bold border border-mkt-makoto/50 p-4 rounded bg-mkt-makoto/5">{errorMsg}</div>
                 ) : analyzedData ? (
                   <div className="animate-in fade-in slide-in-from-right-8 duration-500 flex flex-col gap-8">
+                    
                     <div className="flex items-center gap-8 bg-white p-6 rounded-lg border border-mkt-border shadow-sm">
                       <div className="w-48 h-48 flex-shrink-0">
                         <ResponsiveContainer width="100%" height="100%">
@@ -327,15 +347,21 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                         </div>
                       </div>
                     </div>
+                    
                     <div>
-                      <h5 className="text-sm font-bold text-mkt-text-sub tracking-widest mb-4 flex items-center gap-2">分析結果と戦略上の機会</h5>
+                      <h5 className="text-sm font-bold text-mkt-text-sub tracking-widest mb-4 flex items-center gap-2">
+                        分析結果と戦略上の機会
+                      </h5>
                       <div className="space-y-4">
                         {analyzedData.gapAnalysis?.map((gap, i) => (
                           <div key={i} className="bg-white border border-mkt-border rounded-lg p-5 hover:border-mkt-asagi/50 transition-colors shadow-sm">
                             <div className="flex justify-between items-start mb-4">
                               <span className="bg-slate-100 text-slate-600 border border-slate-200 px-3 py-1 rounded text-xs font-bold tracking-wider">{gap.theme}</span>
-                              <span className={`px-3 py-1 rounded text-xs font-bold border ${getAssessmentStyle(gap.assessment)}`}>評価: {gap.assessment}</span>
+                              <span className={`px-3 py-1 rounded text-xs font-bold border ${getAssessmentStyle(gap.assessment)}`}>
+                                評価: {gap.assessment}
+                              </span>
                             </div>
+                            
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                               <div className="bg-slate-50 p-4 rounded border-l-4 border-mkt-asagi border-y border-r border-slate-100">
                                 <span className="text-[10px] text-mkt-asagi font-bold tracking-wider mb-2 block">公式の主張</span>
@@ -346,8 +372,11 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                                 <p className="text-sm font-bold text-mkt-text-main leading-relaxed">{gap.reality}</p>
                               </div>
                             </div>
+                            
                             <div className="mt-4 bg-mkt-makoto/5 border border-mkt-makoto/20 p-4 rounded-md">
-                              <span className="text-xs text-mkt-makoto font-bold tracking-widest mb-2 flex items-center gap-2"><Target size={14} /> 当社の戦略的方針</span>
+                              <span className="text-xs text-mkt-makoto font-bold tracking-widest mb-2 flex items-center gap-2">
+                                <Target size={14} /> 当社の戦略的方針
+                              </span>
                               <p className="text-sm text-mkt-text-main leading-relaxed font-bold">{gap.opportunity}</p>
                             </div>
                           </div>
