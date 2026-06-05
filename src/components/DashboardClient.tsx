@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Activity, Eye, X, Loader2, Target, Crosshair, Quote, Image as ImageIcon, ShoppingCart, CheckSquare, Square, FileText, Zap, Brain, Cpu, MessageCircle } from 'lucide-react';
+import { Activity, Eye, X, Loader2, Target, Crosshair, Quote, Image as ImageIcon, ShoppingCart, CheckSquare, Square, FileText, Zap, Brain, Cpu, MessageCircle, BarChart3 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 type Competitor = {
@@ -25,7 +25,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
   const [pendingProduct, setPendingProduct] = useState<Competitor | null>(null);
   const [pendingPlan, setPendingPlan] = useState<boolean>(false);
 
-  // 顧客評価の表示件数を管理する状態
   const [visibleReviewCount, setVisibleReviewCount] = useState<number>(50);
 
   const executeAnalysis = async (modelType: string) => {
@@ -35,7 +34,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
       setSelectedProduct(item); 
       setAnalyzedData(null); 
       setErrorMsg("");
-      setVisibleReviewCount(50); // 新しい分析を開くたびに表示件数を50件にリセット
+      setVisibleReviewCount(50);
       
       setIsAnalyzing(true);
       try {
@@ -80,13 +79,45 @@ export default function DashboardClient({ initialData }: { initialData: Competit
     return "bg-slate-100 text-slate-600 border-slate-300";
   };
 
-  // 生のレビューデータをJSONとして安全に読み込む処理
-  const rawReviewsList = React.useMemo(() => {
-    if (!selectedProduct || !selectedProduct.rawReviews) return [];
+  // 👑 SGT自動判定：生のレビューデータを解析し、Amazonと楽天に分類・集計する処理
+  const { processedReviews, reviewSummary } = React.useMemo(() => {
+    if (!selectedProduct || !selectedProduct.rawReviews) return { processedReviews: [], reviewSummary: null };
     try {
-      return JSON.parse(selectedProduct.rawReviews);
+      const parsed = JSON.parse(selectedProduct.rawReviews);
+      const summary = {
+        Amazon: { count: 0, totalScore: 0, validCount: 0 },
+        Rakuten: { count: 0, totalScore: 0, validCount: 0 }
+      };
+
+      const processed = parsed.map((rev: any) => {
+        let p = rev.platform || "";
+        // プラットフォームが欠落していても、日付の「日本でレビュー済み」フォーマットでAmazonを強制判定
+        if (p.toLowerCase().includes("amazon") || (rev.date && rev.date.includes("日本でレビュー済み"))) {
+          p = "Amazon";
+        } else if (p.includes("楽天") || p.toLowerCase().includes("rakuten")) {
+          p = "楽天市場";
+        } else {
+          p = "Amazon"; // どちらにも該当しない場合の暫定処理（既存のスクレイピングデータ比率に基づく）
+        }
+
+        // 星評価の文字列（例: "5つ星のうち4.0"）から数値を抽出
+        const scoreMatch = String(rev.rating).match(/([0-9.]+)/);
+        const score = scoreMatch ? parseFloat(scoreMatch[1]) : 0;
+
+        if (p === "Amazon") {
+          summary.Amazon.count++;
+          if (score > 0) { summary.Amazon.totalScore += score; summary.Amazon.validCount++; }
+        } else if (p === "楽天市場") {
+          summary.Rakuten.count++;
+          if (score > 0) { summary.Rakuten.totalScore += score; summary.Rakuten.validCount++; }
+        }
+
+        return { ...rev, displayPlatform: p, score };
+      });
+
+      return { processedReviews: processed, reviewSummary: summary };
     } catch (e) {
-      return [];
+      return { processedReviews: [], reviewSummary: null };
     }
   }, [selectedProduct]);
 
@@ -238,13 +269,11 @@ export default function DashboardClient({ initialData }: { initialData: Competit
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
           <div className="bg-slate-50 border-2 border-mkt-asagi/50 rounded-2xl w-full max-w-5xl max-h-[95vh] flex flex-col relative overflow-hidden shadow-2xl">
             <button onClick={() => setPlanData(null)} className="absolute top-4 right-4 text-slate-400 hover:text-mkt-makoto bg-white hover:bg-red-50 p-2 rounded-full transition-colors z-20 shadow-md"><X size={28} /></button>
-            
             <div className="bg-mkt-surface border-b-4 border-mkt-makoto p-8 pr-20 text-mkt-text-main">
               <span className="bg-mkt-asagi text-white text-xs font-bold px-3 py-1 rounded tracking-widest flex items-center gap-2 w-max mb-4 shadow-sm"><FileText size={14}/> 新商品企画案</span>
               <h2 className="text-3xl md:text-4xl font-bold mb-3 leading-tight">{planData.conceptName}</h2>
               <p className="text-mkt-makoto font-bold text-lg">"{planData.mainCopy}"</p>
             </div>
-
             <div className="p-8 overflow-y-auto flex-grow flex flex-col gap-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
@@ -256,7 +285,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   <p className="text-base font-bold text-slate-700 leading-relaxed whitespace-pre-wrap break-words">{planData.differentiation}</p>
                 </div>
               </div>
-
               <div className="bg-slate-50 p-6 rounded-xl border border-mkt-border">
                 <h4 className="text-sm text-mkt-text-main font-bold tracking-widest mb-4 border-b border-slate-200 pb-2">必須機能要件</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -410,41 +438,78 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   <div className="flex-grow flex items-center justify-center font-bold text-mkt-text-sub">分析データがありません</div>
                 )}
 
-                {/* 👑 追加：顧客評価一覧（生のレビューデータ） */}
-                {!isAnalyzing && !errorMsg && rawReviewsList.length > 0 && (
-                  <div className="mt-12 pt-8 border-t-4 border-slate-100">
+                {/* 👑 追加：プラットフォーム別レビュー統計パネル */}
+                {!isAnalyzing && !errorMsg && reviewSummary && processedReviews.length > 0 && (
+                  <div className="mt-12 pt-8 border-t-4 border-slate-100 animate-in fade-in duration-500">
+                    <h4 className="font-bold tracking-widest text-mkt-text-main flex items-center gap-3 text-xl mb-6">
+                      <BarChart3 className="text-mkt-asagi" /> プラットフォーム別 評価統計
+                    </h4>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                      {/* Amazon 統計カード */}
+                      <div className="bg-slate-800 text-white p-5 rounded-lg flex justify-between items-center shadow-md border border-slate-700">
+                        <div className="flex items-center gap-3">
+                          <ShoppingCart size={24} className="text-slate-300" />
+                          <span className="font-black tracking-widest text-lg">Amazon</span>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-3xl font-black mb-1">{reviewSummary.Amazon.count.toLocaleString()} <span className="text-sm font-bold text-slate-400">件</span></div>
+                          <div className="text-yellow-400 font-bold">
+                            平均 ★ {reviewSummary.Amazon.validCount > 0 ? (reviewSummary.Amazon.totalScore / reviewSummary.Amazon.validCount).toFixed(1) : "-"}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* 楽天市場 統計カード */}
+                      <div className="bg-[#BF0000] text-white p-5 rounded-lg flex justify-between items-center shadow-md border border-[#990000]">
+                        <div className="flex items-center gap-3">
+                          <ShoppingCart size={24} className="text-red-200" />
+                          <span className="font-black tracking-widest text-lg">楽天市場</span>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-3xl font-black mb-1">{reviewSummary.Rakuten.count.toLocaleString()} <span className="text-sm font-bold text-red-200">件</span></div>
+                          <div className="text-yellow-300 font-bold">
+                            平均 ★ {reviewSummary.Rakuten.validCount > 0 ? (reviewSummary.Rakuten.totalScore / reviewSummary.Rakuten.validCount).toFixed(1) : "-"}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     <h4 className="font-bold tracking-widest text-mkt-text-main flex items-center gap-3 text-xl mb-6">
                       <MessageCircle className="text-mkt-asagi" /> 顧客評価一覧（生データ）
                     </h4>
                     
                     <div className="space-y-4">
-                      {rawReviewsList.slice(0, visibleReviewCount).map((rev: any, idx: number) => (
-                        <div key={idx} className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm">
-                          <div className="flex justify-between items-start mb-3">
-                            <div className="flex items-center gap-3">
-                              <span className="text-yellow-500 font-bold tracking-wider">{rev.rating}</span>
-                              <span className="text-xs font-bold text-slate-500">{rev.date}</span>
+                      {processedReviews.slice(0, visibleReviewCount).map((rev: any, idx: number) => (
+                        <div key={idx} className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm hover:border-mkt-asagi/30 transition-colors">
+                          <div className="flex justify-between items-start mb-4 border-b border-slate-100 pb-3">
+                            <div className="flex items-center gap-4">
+                              {/* 👑 修正：Amazonと楽天を直感的に区別できる大型バッジ */}
+                              <span className={`text-xs font-black px-3 py-1.5 rounded flex items-center gap-1.5 shadow-sm ${rev.displayPlatform === 'Amazon' ? 'bg-slate-800 text-white' : rev.displayPlatform === '楽天市場' ? 'bg-[#BF0000] text-white' : 'bg-slate-500 text-white'}`}>
+                                <ShoppingCart size={14} />
+                                {rev.displayPlatform}
+                              </span>
+                              <span className="text-yellow-500 font-black tracking-wider text-lg">{rev.rating}</span>
                             </div>
-                            <span className={`text-[10px] font-bold px-2 py-1 rounded ${rev.platform === 'Amazon' ? 'bg-slate-800 text-white' : 'bg-[#BF0000] text-white'}`}>
-                              {rev.platform || "購入者"}
-                            </span>
+                            <span className="text-xs font-bold text-slate-400">{rev.date}</span>
                           </div>
-                          <h5 className="font-bold text-slate-800 mb-2">{rev.title}</h5>
+                          
+                          <h5 className="font-bold text-slate-800 mb-2 text-lg">{rev.title}</h5>
                           <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{rev.body}</p>
+                          
                           {rev.attributes && rev.attributes !== "属性不明" && rev.attributes !== "属性なし" && (
-                            <p className="text-[10px] text-slate-400 font-bold mt-4 pt-2 border-t border-slate-100">{rev.attributes}</p>
+                            <p className="text-[10px] text-slate-400 font-bold mt-4 pt-2 border-t border-slate-50">{rev.attributes}</p>
                           )}
                         </div>
                       ))}
                     </div>
 
-                    {/* 追加読み込みボタン */}
-                    {rawReviewsList.length > visibleReviewCount && (
+                    {processedReviews.length > visibleReviewCount && (
                       <button
                         onClick={() => setVisibleReviewCount(prev => prev + 50)}
-                        className="w-full mt-6 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded transition-colors border border-slate-200"
+                        className="w-full mt-8 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black py-4 rounded transition-colors border border-slate-300 tracking-widest shadow-sm"
                       >
-                        さらに読み込む（全 {rawReviewsList.length} 件中 {visibleReviewCount} 件を表示中）
+                        さらに読み込む（全 {processedReviews.length} 件中 {visibleReviewCount} 件を表示中）
                       </button>
                     )}
                   </div>
