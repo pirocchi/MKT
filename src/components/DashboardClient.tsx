@@ -190,7 +190,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
             <div className="bg-mkt-surface p-6 flex justify-between items-center text-mkt-text-main border-b-4 border-mkt-makoto">
               <h3 className="text-xl font-black flex items-center gap-3 tracking-widest">
                 <span className="bg-mkt-asagi text-white p-2 rounded-md shadow-sm"><Brain size={20} /></span> 
-                分析モデルの選択
+                分析方法の選択
               </h3>
               <button onClick={() => { setPendingProduct(null); setPendingPlan(false); }} className="text-slate-400 hover:text-mkt-makoto bg-slate-100 hover:bg-red-50 p-2 rounded-full transition-colors"><X size={24} /></button>
             </div>
