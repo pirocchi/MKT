@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Activity, Eye, X, Loader2, Target, Crosshair, Quote, Image as ImageIcon, ShoppingCart, CheckSquare, Square, FileText, Zap, Brain, Cpu } from 'lucide-react';
+import { Activity, Eye, X, Loader2, Target, Crosshair, Quote, Image as ImageIcon, ShoppingCart, CheckSquare, Square, FileText, Zap, Brain, Cpu, MessageCircle } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 type Competitor = {
@@ -10,10 +10,7 @@ type Competitor = {
 };
 type GapAnalysis = { theme: string; claim: string; reality: string; assessment: string; opportunity: string; };
 type SentimentData = { sentiments: { name: string; value: number; color: string }[]; gapAnalysis: GapAnalysis[]; };
-
-type ProductPlan = {
-  conceptName: string; targetPrice: string; coreFeatures: string[]; differentiation: string; mainCopy: string;
-};
+type ProductPlan = { conceptName: string; targetPrice: string; coreFeatures: string[]; differentiation: string; mainCopy: string; };
 
 export default function DashboardClient({ initialData }: { initialData: Competitor[] }) {
   const [selectedProduct, setSelectedProduct] = useState<Competitor | null>(null);
@@ -28,11 +25,18 @@ export default function DashboardClient({ initialData }: { initialData: Competit
   const [pendingProduct, setPendingProduct] = useState<Competitor | null>(null);
   const [pendingPlan, setPendingPlan] = useState<boolean>(false);
 
+  // 顧客評価の表示件数を管理する状態
+  const [visibleReviewCount, setVisibleReviewCount] = useState<number>(50);
+
   const executeAnalysis = async (modelType: string) => {
     if (pendingProduct) {
       const item = pendingProduct;
       setPendingProduct(null);
-      setSelectedProduct(item); setAnalyzedData(null); setErrorMsg("");
+      setSelectedProduct(item); 
+      setAnalyzedData(null); 
+      setErrorMsg("");
+      setVisibleReviewCount(50); // 新しい分析を開くたびに表示件数を50件にリセット
+      
       setIsAnalyzing(true);
       try {
         const res = await fetch('/api/analyze', {
@@ -76,9 +80,18 @@ export default function DashboardClient({ initialData }: { initialData: Competit
     return "bg-slate-100 text-slate-600 border-slate-300";
   };
 
+  // 生のレビューデータをJSONとして安全に読み込む処理
+  const rawReviewsList = React.useMemo(() => {
+    if (!selectedProduct || !selectedProduct.rawReviews) return [];
+    try {
+      return JSON.parse(selectedProduct.rawReviews);
+    } catch (e) {
+      return [];
+    }
+  }, [selectedProduct]);
+
   return (
     <div className="min-h-screen bg-mkt-bg text-mkt-text-main p-8 font-sans relative">
-      
       <header className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-mkt-border pb-6 mb-8 gap-4">
         <div>
           <h1 className="text-4xl font-bold tracking-wider flex items-center gap-3">
@@ -117,11 +130,9 @@ export default function DashboardClient({ initialData }: { initialData: Competit
           const isSelected = selectedForPlan.some(p => p.id === item.id);
           return (
             <div key={item.id || index} className={`bg-mkt-surface border-2 rounded-lg p-6 relative overflow-hidden group transition-all duration-300 flex flex-col shadow-sm ${isSelected ? 'border-mkt-makoto bg-mkt-makoto/5' : 'border-mkt-border hover:border-mkt-asagi'}`}>
-              
               <button onClick={() => togglePlanSelection(item)} className="absolute top-4 right-4 z-10 transition-colors">
                 {isSelected ? <CheckSquare size={28} className="text-mkt-makoto bg-white rounded" /> : <Square size={28} className="text-slate-300 hover:text-mkt-makoto bg-white rounded" />}
               </button>
-
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-mkt-makoto to-mkt-asagi opacity-75"></div>
               
               <div className="w-full h-48 mb-5 bg-slate-50 border border-slate-100 rounded-md flex items-center justify-center overflow-hidden relative mt-4">
@@ -135,11 +146,9 @@ export default function DashboardClient({ initialData }: { initialData: Competit
               <div className="flex justify-between items-start mb-4">
                 <span className="text-xs font-bold text-white bg-mkt-asagi px-2 py-1 rounded">{item.classification}</span>
               </div>
-              
               <h2 className="text-2xl font-bold mb-1 text-mkt-text-main">{item.brand}</h2>
-              <h3 className="text-mkt-text-sub text-sm mb-3 h-10 font-medium line-clamp-2">{item.name}</h3>
+              <h3 className="text-mkt-text-sub text-sm mb-5 h-10 font-medium line-clamp-2">{item.name}</h3>
               
-              {/* 👑 追加：スペックバッジ（テクノロジー・防水） */}
               <div className="flex flex-wrap gap-2 mb-4">
                 <span className="text-[10px] bg-mkt-asagi/10 text-mkt-asagi border border-mkt-asagi/30 px-2 py-1 rounded font-black tracking-wider">{item.tech}</span>
                 <span className="text-[10px] bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded font-black tracking-wider">防水: {item.waterproof}</span>
@@ -183,7 +192,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
         })}
       </div>
 
-      {/* 👑 修正：分析モデル選択ダイアログ（タイトルバーの視認性を完全修正） */}
+      {/* 分析モデル選択ダイアログ */}
       {(pendingProduct || pendingPlan) && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-xl w-full max-w-2xl overflow-hidden shadow-2xl border border-mkt-border">
@@ -292,7 +301,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   </div>
                 )}
                 
-                {/* 👑 追加：ハードウェア仕様セクション */}
                 <h4 className="text-sm font-black text-mkt-text-sub tracking-widest border-b border-mkt-border pb-2 mb-4 mt-8">ハードウェア仕様</h4>
                 <div className="space-y-4 mb-8">
                   <div><span className="text-xs text-slate-500 font-bold block mb-1">搭載テクノロジー</span><p className="text-sm font-bold text-mkt-text-main">{selectedProduct.tech}</p></div>
@@ -300,7 +308,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   <div><span className="text-xs text-slate-500 font-bold block mb-1">ピン仕様</span><p className="text-sm font-bold text-mkt-text-main leading-relaxed">{selectedProduct.pins}</p></div>
                 </div>
 
-                <h4 className="text-sm font-black text-mkt-text-sub tracking-widest border-b border-mkt-border pb-2 mb-4">公式設定の訴求内容</h4>
+                <h4 className="text-sm font-bold text-mkt-text-sub tracking-widest border-b border-mkt-border pb-2 mb-4">公式設定の訴求内容</h4>
                 <div className="space-y-5">
                   <div><span className="text-xs text-slate-500 font-bold block mb-1">対象顧客</span><p className="text-sm font-bold text-mkt-text-main">{selectedProduct.claims?.target}</p></div>
                   <div><span className="text-xs text-slate-500 font-bold block mb-1">訴求事項</span><p className="text-sm font-bold text-mkt-text-main">{selectedProduct.claims?.problem}</p></div>
@@ -316,7 +324,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
               </div>
 
               <div className="p-8 lg:w-2/3 flex flex-col bg-mkt-surface overflow-y-auto">
-                {/* 👑 修正：右側のヘッダーに pr-12 の余白をつけ、右上の×ボタンと干渉しないように防御！ */}
                 <div className="flex justify-between items-center mb-6 border-b border-mkt-border pb-4 pr-12">
                   <h4 className="font-bold tracking-widest text-mkt-text-main flex items-center gap-3 text-xl">
                     <Crosshair className="text-mkt-makoto" /> 比較分析結果
@@ -400,7 +407,47 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                     </div>
                   </div>
                 ) : (
-                  <div className="flex-grow flex items-center justify-center font-bold text-mkt-text-sub">データがありません</div>
+                  <div className="flex-grow flex items-center justify-center font-bold text-mkt-text-sub">分析データがありません</div>
+                )}
+
+                {/* 👑 追加：顧客評価一覧（生のレビューデータ） */}
+                {!isAnalyzing && !errorMsg && rawReviewsList.length > 0 && (
+                  <div className="mt-12 pt-8 border-t-4 border-slate-100">
+                    <h4 className="font-bold tracking-widest text-mkt-text-main flex items-center gap-3 text-xl mb-6">
+                      <MessageCircle className="text-mkt-asagi" /> 顧客評価一覧（生データ）
+                    </h4>
+                    
+                    <div className="space-y-4">
+                      {rawReviewsList.slice(0, visibleReviewCount).map((rev: any, idx: number) => (
+                        <div key={idx} className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm">
+                          <div className="flex justify-between items-start mb-3">
+                            <div className="flex items-center gap-3">
+                              <span className="text-yellow-500 font-bold tracking-wider">{rev.rating}</span>
+                              <span className="text-xs font-bold text-slate-500">{rev.date}</span>
+                            </div>
+                            <span className={`text-[10px] font-bold px-2 py-1 rounded ${rev.platform === 'Amazon' ? 'bg-slate-800 text-white' : 'bg-[#BF0000] text-white'}`}>
+                              {rev.platform || "購入者"}
+                            </span>
+                          </div>
+                          <h5 className="font-bold text-slate-800 mb-2">{rev.title}</h5>
+                          <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{rev.body}</p>
+                          {rev.attributes && rev.attributes !== "属性不明" && rev.attributes !== "属性なし" && (
+                            <p className="text-[10px] text-slate-400 font-bold mt-4 pt-2 border-t border-slate-100">{rev.attributes}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* 追加読み込みボタン */}
+                    {rawReviewsList.length > visibleReviewCount && (
+                      <button
+                        onClick={() => setVisibleReviewCount(prev => prev + 50)}
+                        className="w-full mt-6 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded transition-colors border border-slate-200"
+                      >
+                        さらに読み込む（全 {rawReviewsList.length} 件中 {visibleReviewCount} 件を表示中）
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
