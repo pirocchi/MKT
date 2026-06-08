@@ -25,14 +25,12 @@ export default function DashboardClient({ initialData }: { initialData: Competit
   const [pendingProduct, setPendingProduct] = useState<Competitor | null>(null);
   const [pendingPlan, setPendingPlan] = useState<boolean>(false);
 
-  // 👑 レビューのフィルター・ソート用の状態管理
   const [visibleReviewCount, setVisibleReviewCount] = useState<number>(50);
   const [filterPlatform, setFilterPlatform] = useState<string>('ALL');
   const [filterPeriod, setFilterPeriod] = useState<string>('ALL');
   const [filterRating, setFilterRating] = useState<string>('ALL');
   const [sortOrder, setSortOrder] = useState<string>('DATE_DESC');
 
-  // 👑 追加：レイアウト切り替え用の状態管理（'grid' = カード型, 'list' = 一覧型）
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const executeAnalysis = async (modelType: string) => {
@@ -179,18 +177,17 @@ export default function DashboardClient({ initialData }: { initialData: Competit
 
 
   return (
-    <div className="min-h-screen bg-mkt-bg text-mkt-text-main p-8 font-sans relative">
+    <div className="min-h-screen bg-mkt-bg text-mkt-text-main p-4 md:p-8 font-sans relative">
       <header className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-mkt-border pb-6 mb-8 gap-4">
         <div>
-          <h1 className="text-4xl font-bold tracking-wider flex items-center gap-3">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-wider flex items-center gap-3">
             <span className="text-mkt-makoto">MKT</span><span>競合分析画面</span>
           </h1>
-          <p className="text-mkt-asagi text-sm mt-2 tracking-widest flex items-center gap-2 font-bold">
+          <p className="text-mkt-asagi text-xs md:text-sm mt-2 tracking-widest flex items-center gap-2 font-bold">
             <Eye size={16} /> 競合製品の市場評価と方針の比較
           </p>
         </div>
         <div className="flex gap-4 items-center">
-          {/* 👑 追加：レイアウト切り替えボタン */}
           <div className="flex bg-slate-200/50 p-1 rounded-lg">
             <button 
               onClick={() => setViewMode('grid')}
@@ -208,14 +205,14 @@ export default function DashboardClient({ initialData }: { initialData: Competit
             </button>
           </div>
           
-          <div className="bg-mkt-surface border border-mkt-border px-4 py-2 rounded flex items-center gap-2 font-bold shadow-sm">
-            <Activity size={16} className="text-green-500" /> 統合運用システム連携完了
+          <div className="hidden md:flex bg-mkt-surface border border-mkt-border px-4 py-2 rounded items-center gap-2 font-bold shadow-sm">
+            <Activity size={16} className="text-green-500" /> AI 連携完了
           </div>
         </div>
       </header>
 
       {selectedForPlan.length >= 2 && (
-        <div className="fixed bottom-8 right-8 z-40 animate-in slide-in-from-bottom-10 fade-in duration-300">
+        <div className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-40 animate-in slide-in-from-bottom-10 fade-in duration-300">
           <button 
             onClick={() => {
               if (isGeneratingPlan) return;
@@ -223,19 +220,15 @@ export default function DashboardClient({ initialData }: { initialData: Competit
             }}
             disabled={isGeneratingPlan}
             style={{ color: '#FFFFFF' }}
-            className="bg-mkt-asagi hover:opacity-90 font-bold px-8 py-4 rounded-full shadow-2xl flex items-center gap-3 hover:scale-105 transition-transform disabled:opacity-70 disabled:cursor-not-allowed border-4 border-mkt-makoto"
+            className="bg-mkt-asagi hover:opacity-90 font-bold px-6 py-3 md:px-8 md:py-4 rounded-full shadow-2xl flex items-center gap-3 hover:scale-105 transition-transform disabled:opacity-70 disabled:cursor-not-allowed border-4 border-mkt-makoto text-sm md:text-base"
           >
             {isGeneratingPlan ? <Loader2 size={24} className="animate-spin text-white" /> : <FileText size={24} className="text-white" />}
-            {isGeneratingPlan ? "新商品企画案を作成中..." : `選択した${selectedForPlan.length}製品から新商品企画案を作成`}
+            {isGeneratingPlan ? "作成中..." : `${selectedForPlan.length}製品で企画案を作成`}
           </button>
         </div>
       )}
 
-      {/* 👑 レイアウト切り替えロジック */}
       {viewMode === 'grid' ? (
-        // -------------------------
-        // 従来の「カード型（Grid）」表示
-        // -------------------------
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {initialData.map((item, index) => {
             const isSelected = selectedForPlan.some(p => p.id === item.id);
@@ -303,22 +296,20 @@ export default function DashboardClient({ initialData }: { initialData: Competit
           })}
         </div>
       ) : (
-        // -------------------------
-        // 👑 新設の「一覧型（List/Table）」表示
-        // -------------------------
-        <div className="bg-mkt-surface border border-mkt-border rounded-lg overflow-x-auto shadow-sm">
-          <table className="w-full text-left border-collapse min-w-[1000px]">
+        // 👑 修正：モバイル完全対応の一覧型リストレイアウト
+        <div className="bg-mkt-surface border border-mkt-border rounded-lg overflow-x-auto shadow-sm pb-4">
+          <table className="w-full text-left border-collapse min-w-[600px] lg:min-w-[1000px]">
             <thead>
-              <tr className="bg-slate-100 text-slate-600 border-b-2 border-slate-300">
-                <th className="p-4 font-black whitespace-nowrap w-16 text-center">選択</th>
-                <th className="p-4 font-black whitespace-nowrap w-24 text-center">画像</th>
-                <th className="p-4 font-black whitespace-nowrap min-w-[200px]">ブランド / 商品名</th>
-                <th className="p-4 font-black whitespace-nowrap text-right">実売価格</th>
-                <th className="p-4 font-black whitespace-nowrap text-center">平均評価</th>
-                <th className="p-4 font-black whitespace-nowrap text-right">レビュー数</th>
-                <th className="p-4 font-black whitespace-nowrap">テクノロジー</th>
-                <th className="p-4 font-black whitespace-nowrap">防水</th>
-                <th className="p-4 font-black whitespace-nowrap text-center">分析</th>
+              <tr className="bg-slate-100 text-slate-600 border-b-2 border-slate-300 text-xs md:text-sm">
+                <th className="p-2 md:p-4 font-black whitespace-nowrap w-10 md:w-16 text-center">選択</th>
+                <th className="p-2 md:p-4 font-black whitespace-nowrap w-16 md:w-24 text-center">画像</th>
+                <th className="p-2 md:p-4 font-black whitespace-nowrap min-w-[150px] md:min-w-[200px]">ブランド / 商品名</th>
+                <th className="p-2 md:p-4 font-black whitespace-nowrap text-right w-20 md:w-28">実売価格</th>
+                <th className="p-2 md:p-4 font-black whitespace-nowrap text-center w-24 md:w-32">平均評価</th>
+                <th className="p-2 md:p-4 font-black whitespace-nowrap text-right w-20 md:w-28">レビュー数</th>
+                <th className="p-2 md:p-4 font-black whitespace-nowrap w-24 md:w-32">テクノロジー</th>
+                <th className="p-2 md:p-4 font-black whitespace-nowrap w-20 md:w-24">防水</th>
+                <th className="p-2 md:p-4 font-black whitespace-nowrap text-center w-24 md:w-28">分析</th>
               </tr>
             </thead>
             <tbody>
@@ -326,46 +317,46 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                 const isSelected = selectedForPlan.some(p => p.id === item.id);
                 return (
                   <tr key={item.id || index} className={`border-b border-slate-200 hover:bg-slate-50 transition-colors ${isSelected ? 'bg-mkt-makoto/5' : ''}`}>
-                    <td className="p-4 text-center align-middle">
+                    <td className="p-2 md:p-4 text-center align-middle">
                       <button onClick={() => togglePlanSelection(item)} className="transition-colors mt-1">
-                        {isSelected ? <CheckSquare size={24} className="text-mkt-makoto bg-white rounded" /> : <Square size={24} className="text-slate-300 hover:text-mkt-makoto bg-white rounded" />}
+                        {isSelected ? <CheckSquare className="text-mkt-makoto bg-white rounded w-5 h-5 md:w-6 md:h-6" /> : <Square className="text-slate-300 hover:text-mkt-makoto bg-white rounded w-5 h-5 md:w-6 md:h-6" />}
                       </button>
                     </td>
-                    <td className="p-4 align-middle">
-                      <div className="w-16 h-16 bg-white border border-slate-200 rounded flex items-center justify-center overflow-hidden mx-auto">
+                    <td className="p-2 md:p-4 align-middle">
+                      <div className="w-10 h-10 md:w-16 md:h-16 bg-white border border-slate-200 rounded flex items-center justify-center overflow-hidden mx-auto">
                         {item.imageUrl ? (
                           <img src={item.imageUrl} alt={item.name} className="object-contain w-full h-full p-1 mix-blend-multiply" />
                         ) : (
-                          <ImageIcon size={20} className="text-slate-300" />
+                          <ImageIcon className="text-slate-300 w-4 h-4 md:w-5 md:h-5" />
                         )}
                       </div>
                     </td>
-                    <td className="p-4 align-middle">
-                      <div className="font-black text-mkt-text-main text-lg mb-1">{item.brand}</div>
-                      <div className="text-xs font-bold text-mkt-text-sub line-clamp-2">{item.name}</div>
+                    <td className="p-2 md:p-4 align-middle">
+                      <div className="font-black text-mkt-text-main text-sm md:text-lg mb-1">{item.brand}</div>
+                      <div className="text-[10px] md:text-xs font-bold text-mkt-text-sub line-clamp-2">{item.name}</div>
                     </td>
-                    <td className="p-4 text-right align-middle">
-                      <span className="font-black text-xl text-mkt-text-main tracking-tight">¥{item.price.toLocaleString()}</span>
+                    <td className="p-2 md:p-4 text-right align-middle">
+                      <span className="font-black text-base md:text-xl text-mkt-text-main tracking-tight whitespace-nowrap">¥{item.price.toLocaleString()}</span>
                     </td>
-                    <td className="p-4 text-center align-middle">
-                      <span className="font-black text-yellow-500 text-xl drop-shadow-sm">★ {item.averageRating || "-"}</span>
+                    <td className="p-2 md:p-4 text-center align-middle">
+                      <span className="font-black text-yellow-500 text-sm md:text-xl drop-shadow-sm whitespace-nowrap">★ {item.averageRating || "-"}</span>
                     </td>
-                    <td className="p-4 text-right align-middle">
-                      <span className="font-black text-mkt-asagi text-lg">{item.reviews.toLocaleString()} <span className="text-xs">件</span></span>
+                    <td className="p-2 md:p-4 text-right align-middle">
+                      <span className="font-black text-mkt-asagi text-sm md:text-lg whitespace-nowrap">{item.reviews.toLocaleString()} <span className="text-[10px] md:text-xs">件</span></span>
                     </td>
-                    <td className="p-4 align-middle">
-                      <span className="text-[10px] bg-mkt-asagi/10 text-mkt-asagi border border-mkt-asagi/30 px-2 py-1 rounded font-black tracking-wider whitespace-nowrap">{item.tech}</span>
+                    <td className="p-2 md:p-4 align-middle">
+                      <span className="text-[8px] md:text-[10px] bg-mkt-asagi/10 text-mkt-asagi border border-mkt-asagi/30 px-1 md:px-2 py-0.5 md:py-1 rounded font-black tracking-wider whitespace-nowrap">{item.tech}</span>
                     </td>
-                    <td className="p-4 align-middle">
-                      <span className="text-[10px] bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded font-black tracking-wider whitespace-nowrap">{item.waterproof}</span>
+                    <td className="p-2 md:p-4 align-middle">
+                      <span className="text-[8px] md:text-[10px] bg-slate-100 text-slate-600 border border-slate-200 px-1 md:px-2 py-0.5 md:py-1 rounded font-black tracking-wider whitespace-nowrap">{item.waterproof}</span>
                     </td>
-                    <td className="p-4 text-center align-middle">
+                    <td className="p-2 md:p-4 text-center align-middle">
                       <button onClick={() => {
                         if (!item.rawReviews || item.rawReviews.trim() === "") {
                           alert("顧客評価データが登録されていません。"); return;
                         }
                         setPendingProduct(item);
-                      }} className="bg-mkt-makoto text-white px-4 py-2 rounded hover:bg-mkt-makoto/80 transition-colors font-black text-sm whitespace-nowrap shadow-sm">
+                      }} className="bg-mkt-makoto text-white px-2 py-1 md:px-4 md:py-2 rounded hover:bg-mkt-makoto/80 transition-colors font-black text-xs md:text-sm whitespace-nowrap shadow-sm">
                         分析実行
                       </button>
                     </td>
