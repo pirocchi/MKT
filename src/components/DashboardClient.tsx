@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Activity, Eye, X, Loader2, Target, Crosshair, Quote, Image as ImageIcon, ShoppingCart, CheckSquare, Square, FileText, Zap, Brain, Cpu, MessageCircle, BarChart3, Filter, Calendar, ArrowUpDown, Star } from 'lucide-react';
+import { Activity, Eye, X, Loader2, Target, Crosshair, Quote, Image as ImageIcon, ShoppingCart, CheckSquare, Square, FileText, Zap, Brain, Cpu, MessageCircle, BarChart3, Filter, Calendar, ArrowUpDown, Star, LayoutGrid, List } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 type Competitor = {
@@ -29,8 +29,11 @@ export default function DashboardClient({ initialData }: { initialData: Competit
   const [visibleReviewCount, setVisibleReviewCount] = useState<number>(50);
   const [filterPlatform, setFilterPlatform] = useState<string>('ALL');
   const [filterPeriod, setFilterPeriod] = useState<string>('ALL');
-  const [filterRating, setFilterRating] = useState<string>('ALL'); // 👑 追加：星の数での絞り込み
+  const [filterRating, setFilterRating] = useState<string>('ALL');
   const [sortOrder, setSortOrder] = useState<string>('DATE_DESC');
+
+  // 👑 追加：レイアウト切り替え用の状態管理（'grid' = カード型, 'list' = 一覧型）
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const executeAnalysis = async (modelType: string) => {
     if (pendingProduct) {
@@ -40,7 +43,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
       setAnalyzedData(null); 
       setErrorMsg("");
       
-      // 分析を開くたびにフィルターを完全リセット
       setVisibleReviewCount(50);
       setFilterPlatform('ALL');
       setFilterPeriod('ALL');
@@ -90,7 +92,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
     return "bg-slate-100 text-slate-600 border-slate-300";
   };
 
-  // 👑 追加：スコアを「★と☆」に変換する関数
   const renderStars = (score: number) => {
     const filled = Math.max(0, Math.min(5, Math.floor(score)));
     return '★'.repeat(filled) + '☆'.repeat(5 - filled);
@@ -145,29 +146,24 @@ export default function DashboardClient({ initialData }: { initialData: Competit
     }
   }, [selectedProduct]);
 
-  // UIの操作に応じてフィルターとソートを実行する
   const filteredAndSortedReviews = React.useMemo(() => {
     let result = [...baseReviews];
 
-    // プラットフォーム絞り込み
     if (filterPlatform !== 'ALL') {
       result = result.filter(r => r.displayPlatform === filterPlatform);
     }
 
-    // 👑 評価（星の数）絞り込み
     if (filterRating !== 'ALL') {
       const targetScore = parseInt(filterRating);
       result = result.filter(r => Math.floor(r.score) === targetScore);
     }
 
-    // 期間絞り込み
     if (filterPeriod !== 'ALL') {
       const now = new Date();
       const cutoff = new Date(now.getTime() - (parseInt(filterPeriod) * 24 * 60 * 60 * 1000));
       result = result.filter(r => r.parsedDate && r.parsedDate >= cutoff);
     }
 
-    // 並び替え
     result.sort((a, b) => {
       const timeA = a.parsedDate?.getTime() || 0;
       const timeB = b.parsedDate?.getTime() || 0;
@@ -193,7 +189,25 @@ export default function DashboardClient({ initialData }: { initialData: Competit
             <Eye size={16} /> 競合製品の市場評価と方針の比較
           </p>
         </div>
-        <div className="flex gap-4">
+        <div className="flex gap-4 items-center">
+          {/* 👑 追加：レイアウト切り替えボタン */}
+          <div className="flex bg-slate-200/50 p-1 rounded-lg">
+            <button 
+              onClick={() => setViewMode('grid')}
+              className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white shadow text-mkt-makoto' : 'text-slate-500 hover:text-mkt-makoto'}`}
+              title="カード表示"
+            >
+              <LayoutGrid size={20} />
+            </button>
+            <button 
+              onClick={() => setViewMode('list')}
+              className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow text-mkt-makoto' : 'text-slate-500 hover:text-mkt-makoto'}`}
+              title="リスト表示"
+            >
+              <List size={20} />
+            </button>
+          </div>
+          
           <div className="bg-mkt-surface border border-mkt-border px-4 py-2 rounded flex items-center gap-2 font-bold shadow-sm">
             <Activity size={16} className="text-green-500" /> 統合運用システム連携完了
           </div>
@@ -217,72 +231,151 @@ export default function DashboardClient({ initialData }: { initialData: Competit
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {initialData.map((item, index) => {
-          const isSelected = selectedForPlan.some(p => p.id === item.id);
-          return (
-            <div key={item.id || index} className={`bg-mkt-surface border-2 rounded-lg p-6 relative overflow-hidden group transition-all duration-300 flex flex-col shadow-sm ${isSelected ? 'border-mkt-makoto bg-mkt-makoto/5' : 'border-mkt-border hover:border-mkt-asagi'}`}>
-              <button onClick={() => togglePlanSelection(item)} className="absolute top-4 right-4 z-10 transition-colors">
-                {isSelected ? <CheckSquare size={28} className="text-mkt-makoto bg-white rounded" /> : <Square size={28} className="text-slate-300 hover:text-mkt-makoto bg-white rounded" />}
-              </button>
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-mkt-makoto to-mkt-asagi opacity-75"></div>
-              
-              <div className="w-full h-48 mb-5 bg-slate-50 border border-slate-100 rounded-md flex items-center justify-center overflow-hidden relative mt-4">
-                {item.imageUrl ? (
-                  <img src={item.imageUrl} alt={item.name} className="object-contain w-full h-full p-2 mix-blend-multiply transition-transform duration-500 group-hover:scale-105" />
-                ) : (
-                  <div className="text-slate-300 flex flex-col items-center"><ImageIcon size={32} className="mb-2 opacity-50" /><span className="text-xs font-bold tracking-widest">画像なし</span></div>
+      {/* 👑 レイアウト切り替えロジック */}
+      {viewMode === 'grid' ? (
+        // -------------------------
+        // 従来の「カード型（Grid）」表示
+        // -------------------------
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {initialData.map((item, index) => {
+            const isSelected = selectedForPlan.some(p => p.id === item.id);
+            return (
+              <div key={item.id || index} className={`bg-mkt-surface border-2 rounded-lg p-6 relative overflow-hidden group transition-all duration-300 flex flex-col shadow-sm ${isSelected ? 'border-mkt-makoto bg-mkt-makoto/5' : 'border-mkt-border hover:border-mkt-asagi'}`}>
+                <button onClick={() => togglePlanSelection(item)} className="absolute top-4 right-4 z-10 transition-colors">
+                  {isSelected ? <CheckSquare size={28} className="text-mkt-makoto bg-white rounded" /> : <Square size={28} className="text-slate-300 hover:text-mkt-makoto bg-white rounded" />}
+                </button>
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-mkt-makoto to-mkt-asagi opacity-75"></div>
+                
+                <div className="w-full h-48 mb-5 bg-slate-50 border border-slate-100 rounded-md flex items-center justify-center overflow-hidden relative mt-4">
+                  {item.imageUrl ? (
+                    <img src={item.imageUrl} alt={item.name} className="object-contain w-full h-full p-2 mix-blend-multiply transition-transform duration-500 group-hover:scale-105" />
+                  ) : (
+                    <div className="text-slate-300 flex flex-col items-center"><ImageIcon size={32} className="mb-2 opacity-50" /><span className="text-xs font-bold tracking-widest">画像なし</span></div>
+                  )}
+                </div>
+
+                <div className="flex justify-between items-start mb-4">
+                  <span className="text-xs font-bold text-white bg-mkt-asagi px-2 py-1 rounded">{item.classification}</span>
+                </div>
+                <h2 className="text-2xl font-bold mb-1 text-mkt-text-main">{item.brand}</h2>
+                <h3 className="text-mkt-text-sub text-sm mb-5 h-10 font-medium line-clamp-2">{item.name}</h3>
+                
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <span className="text-[10px] bg-mkt-asagi/10 text-mkt-asagi border border-mkt-asagi/30 px-2 py-1 rounded font-black tracking-wider">{item.tech}</span>
+                  <span className="text-[10px] bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded font-black tracking-wider">防水: {item.waterproof}</span>
+                </div>
+
+                {(item.amazonUrl || item.rakutenUrl) && (
+                  <div className="flex gap-3 mb-6">
+                    {item.amazonUrl && <a href={item.amazonUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#FFFFFF' }} className="flex-1 bg-slate-800 text-sm font-black py-3 rounded flex justify-center items-center gap-2 hover:bg-slate-700 transition shadow-md"><ShoppingCart size={16} /> Amazon</a>}
+                    {item.rakutenUrl && <a href={item.rakutenUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#FFFFFF' }} className="flex-1 bg-[#BF0000] text-sm font-black py-3 rounded flex justify-center items-center gap-2 hover:bg-[#990000] transition shadow-md"><ShoppingCart size={16} /> 楽天市場</a>}
+                  </div>
                 )}
-              </div>
 
-              <div className="flex justify-between items-start mb-4">
-                <span className="text-xs font-bold text-white bg-mkt-asagi px-2 py-1 rounded">{item.classification}</span>
-              </div>
-              <h2 className="text-2xl font-bold mb-1 text-mkt-text-main">{item.brand}</h2>
-              <h3 className="text-mkt-text-sub text-sm mb-5 h-10 font-medium line-clamp-2">{item.name}</h3>
-              
-              <div className="flex flex-wrap gap-2 mb-4">
-                <span className="text-[10px] bg-mkt-asagi/10 text-mkt-asagi border border-mkt-asagi/30 px-2 py-1 rounded font-black tracking-wider">{item.tech}</span>
-                <span className="text-[10px] bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded font-black tracking-wider">防水: {item.waterproof}</span>
-              </div>
-
-              {(item.amazonUrl || item.rakutenUrl) && (
-                <div className="flex gap-3 mb-6">
-                  {item.amazonUrl && <a href={item.amazonUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#FFFFFF' }} className="flex-1 bg-slate-800 text-sm font-black py-3 rounded flex justify-center items-center gap-2 hover:bg-slate-700 transition shadow-md"><ShoppingCart size={16} /> Amazon</a>}
-                  {item.rakutenUrl && <a href={item.rakutenUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#FFFFFF' }} className="flex-1 bg-[#BF0000] text-sm font-black py-3 rounded flex justify-center items-center gap-2 hover:bg-[#990000] transition shadow-md"><ShoppingCart size={16} /> 楽天市場</a>}
-                </div>
-              )}
-
-              <div className="space-y-5 mb-6 flex-grow">
-                <div className="flex justify-between items-center border-b border-mkt-border pb-3">
-                  <span className="text-mkt-text-sub font-bold">実売価格</span>
-                  <span className="font-black text-3xl text-mkt-text-main tracking-tight">¥{item.price.toLocaleString()}</span>
-                </div>
-                <div className="bg-slate-50 p-3 rounded mt-2 border border-slate-200">
-                  <span className="text-xs text-mkt-asagi font-black mb-1 block tracking-wider">公式広告文案:</span>
-                  <p className="text-sm font-bold italic text-mkt-text-main truncate">"{item.claims?.copy || '未設定'}"</p>
-                </div>
-                <div className="flex justify-between items-end pt-3">
-                  <span className="text-mkt-text-sub text-sm font-bold">顧客評価</span>
-                  <div className="flex items-baseline gap-3">
-                    <span className="font-black text-yellow-500 text-2xl drop-shadow-sm">★ {item.averageRating || "-"}</span>
-                    <span className="font-black text-mkt-asagi text-2xl">{item.reviews.toLocaleString()} <span className="text-sm font-bold">件</span></span>
+                <div className="space-y-5 mb-6 flex-grow">
+                  <div className="flex justify-between items-center border-b border-mkt-border pb-3">
+                    <span className="text-mkt-text-sub font-bold">実売価格</span>
+                    <span className="font-black text-3xl text-mkt-text-main tracking-tight">¥{item.price.toLocaleString()}</span>
+                  </div>
+                  <div className="bg-slate-50 p-3 rounded mt-2 border border-slate-200">
+                    <span className="text-xs text-mkt-asagi font-black mb-1 block tracking-wider">公式広告文案:</span>
+                    <p className="text-sm font-bold italic text-mkt-text-main truncate">"{item.claims?.copy || '未設定'}"</p>
+                  </div>
+                  <div className="flex justify-between items-end pt-3">
+                    <span className="text-mkt-text-sub text-sm font-bold">顧客評価</span>
+                    <div className="flex items-baseline gap-3">
+                      <span className="font-black text-yellow-500 text-2xl drop-shadow-sm">★ {item.averageRating || "-"}</span>
+                      <span className="font-black text-mkt-asagi text-2xl">{item.reviews.toLocaleString()} <span className="text-sm font-bold">件</span></span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <button onClick={() => {
-                if (!item.rawReviews || item.rawReviews.trim() === "") {
-                  alert("顧客評価データが登録されていません。"); return;
-                }
-                setPendingProduct(item);
-              }} className="w-full bg-mkt-surface border-2 border-mkt-makoto text-mkt-makoto py-3 rounded hover:bg-mkt-makoto hover:text-white transition-colors font-black tracking-wider flex justify-center items-center gap-2 text-lg">
-                <Target size={20} /> 個別製品の分析を実行
-              </button>
-            </div>
-          );
-        })}
-      </div>
+                <button onClick={() => {
+                  if (!item.rawReviews || item.rawReviews.trim() === "") {
+                    alert("顧客評価データが登録されていません。"); return;
+                  }
+                  setPendingProduct(item);
+                }} className="w-full bg-mkt-surface border-2 border-mkt-makoto text-mkt-makoto py-3 rounded hover:bg-mkt-makoto hover:text-white transition-colors font-black tracking-wider flex justify-center items-center gap-2 text-lg">
+                  <Target size={20} /> 個別製品の分析を実行
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        // -------------------------
+        // 👑 新設の「一覧型（List/Table）」表示
+        // -------------------------
+        <div className="bg-mkt-surface border border-mkt-border rounded-lg overflow-x-auto shadow-sm">
+          <table className="w-full text-left border-collapse min-w-[1000px]">
+            <thead>
+              <tr className="bg-slate-100 text-slate-600 border-b-2 border-slate-300">
+                <th className="p-4 font-black whitespace-nowrap w-16 text-center">選択</th>
+                <th className="p-4 font-black whitespace-nowrap w-24 text-center">画像</th>
+                <th className="p-4 font-black whitespace-nowrap min-w-[200px]">ブランド / 商品名</th>
+                <th className="p-4 font-black whitespace-nowrap text-right">実売価格</th>
+                <th className="p-4 font-black whitespace-nowrap text-center">平均評価</th>
+                <th className="p-4 font-black whitespace-nowrap text-right">レビュー数</th>
+                <th className="p-4 font-black whitespace-nowrap">テクノロジー</th>
+                <th className="p-4 font-black whitespace-nowrap">防水</th>
+                <th className="p-4 font-black whitespace-nowrap text-center">分析</th>
+              </tr>
+            </thead>
+            <tbody>
+              {initialData.map((item, index) => {
+                const isSelected = selectedForPlan.some(p => p.id === item.id);
+                return (
+                  <tr key={item.id || index} className={`border-b border-slate-200 hover:bg-slate-50 transition-colors ${isSelected ? 'bg-mkt-makoto/5' : ''}`}>
+                    <td className="p-4 text-center align-middle">
+                      <button onClick={() => togglePlanSelection(item)} className="transition-colors mt-1">
+                        {isSelected ? <CheckSquare size={24} className="text-mkt-makoto bg-white rounded" /> : <Square size={24} className="text-slate-300 hover:text-mkt-makoto bg-white rounded" />}
+                      </button>
+                    </td>
+                    <td className="p-4 align-middle">
+                      <div className="w-16 h-16 bg-white border border-slate-200 rounded flex items-center justify-center overflow-hidden mx-auto">
+                        {item.imageUrl ? (
+                          <img src={item.imageUrl} alt={item.name} className="object-contain w-full h-full p-1 mix-blend-multiply" />
+                        ) : (
+                          <ImageIcon size={20} className="text-slate-300" />
+                        )}
+                      </div>
+                    </td>
+                    <td className="p-4 align-middle">
+                      <div className="font-black text-mkt-text-main text-lg mb-1">{item.brand}</div>
+                      <div className="text-xs font-bold text-mkt-text-sub line-clamp-2">{item.name}</div>
+                    </td>
+                    <td className="p-4 text-right align-middle">
+                      <span className="font-black text-xl text-mkt-text-main tracking-tight">¥{item.price.toLocaleString()}</span>
+                    </td>
+                    <td className="p-4 text-center align-middle">
+                      <span className="font-black text-yellow-500 text-xl drop-shadow-sm">★ {item.averageRating || "-"}</span>
+                    </td>
+                    <td className="p-4 text-right align-middle">
+                      <span className="font-black text-mkt-asagi text-lg">{item.reviews.toLocaleString()} <span className="text-xs">件</span></span>
+                    </td>
+                    <td className="p-4 align-middle">
+                      <span className="text-[10px] bg-mkt-asagi/10 text-mkt-asagi border border-mkt-asagi/30 px-2 py-1 rounded font-black tracking-wider whitespace-nowrap">{item.tech}</span>
+                    </td>
+                    <td className="p-4 align-middle">
+                      <span className="text-[10px] bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded font-black tracking-wider whitespace-nowrap">{item.waterproof}</span>
+                    </td>
+                    <td className="p-4 text-center align-middle">
+                      <button onClick={() => {
+                        if (!item.rawReviews || item.rawReviews.trim() === "") {
+                          alert("顧客評価データが登録されていません。"); return;
+                        }
+                        setPendingProduct(item);
+                      }} className="bg-mkt-makoto text-white px-4 py-2 rounded hover:bg-mkt-makoto/80 transition-colors font-black text-sm whitespace-nowrap shadow-sm">
+                        分析実行
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* 分析モデル選択ダイアログ */}
       {(pendingProduct || pendingPlan) && (
@@ -542,9 +635,8 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                       <MessageCircle className="text-mkt-asagi" /> 顧客評価一覧（生データ）
                     </h4>
 
-                    {/* 👑 修正：フィルター＆ソート コントロールバー（ボタンの視認性向上と星フィルターの追加） */}
+                    {/* フィルター＆ソート コントロールバー */}
                     <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg mb-6 flex flex-col xl:flex-row gap-4 items-start xl:items-center justify-between shadow-sm">
-                      {/* プラットフォーム切替 */}
                       <div className="flex items-center gap-1 bg-slate-200/70 p-1 rounded-md">
                         <button 
                           onClick={() => { setFilterPlatform('ALL'); setVisibleReviewCount(50); }} 
@@ -569,7 +661,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                         </button>
                       </div>
                       
-                      {/* 期間と星とソート */}
                       <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
                         <div className="flex flex-1 xl:flex-none items-center gap-2 bg-white border border-slate-300 rounded-md px-3 py-2 shadow-sm focus-within:border-mkt-asagi transition-colors">
                           <Star size={16} className="text-slate-400 flex-shrink-0" />
@@ -603,7 +694,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                       </div>
                     </div>
                     
-                    {/* レビュー表示エリア */}
                     {filteredAndSortedReviews.length === 0 ? (
                       <div className="bg-slate-50 border border-slate-200 rounded-lg p-10 text-center text-slate-500 font-bold">該当するレビューが見つかりません。</div>
                     ) : (
@@ -619,7 +709,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                                   <ShoppingCart size={14} />
                                   {rev.displayPlatform}
                                 </span>
-                                {/* 👑 修正：星の数を「★★★★☆」のような視覚的アイコンで表現！ */}
                                 <span className="text-yellow-500 font-black tracking-widest text-lg">{renderStars(rev.score)}</span>
                               </div>
                               <span className="text-xs font-bold text-slate-400">{rev.date}</span>
