@@ -206,7 +206,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
           </div>
           
           <div className="hidden md:flex bg-mkt-surface border border-mkt-border px-4 py-2 rounded items-center gap-2 font-bold shadow-sm">
-            <Activity size={16} className="text-green-500" /> 統合運用システム連携完了
+            <Activity size={16} className="text-green-500" /> AI 連携完了
           </div>
         </div>
       </header>
@@ -296,19 +296,26 @@ export default function DashboardClient({ initialData }: { initialData: Competit
           })}
         </div>
       ) : (
-        // 👑 修正：モバイル完全対応の一覧型リストレイアウト
         <div className="bg-mkt-surface border border-mkt-border rounded-lg overflow-x-auto shadow-sm pb-4">
-          <table className="w-full text-left border-collapse min-w-[600px] lg:min-w-[1000px]">
+          <table className="w-full text-left border-collapse min-w-[600px] lg:min-w-[1200px]">
             <thead>
               <tr className="bg-slate-100 text-slate-600 border-b-2 border-slate-300 text-xs md:text-sm">
                 <th className="p-2 md:p-4 font-black whitespace-nowrap w-10 md:w-16 text-center">選択</th>
                 <th className="p-2 md:p-4 font-black whitespace-nowrap w-16 md:w-24 text-center">画像</th>
                 <th className="p-2 md:p-4 font-black whitespace-nowrap min-w-[150px] md:min-w-[200px]">ブランド / 商品名</th>
+                
+                {/* 👑 追加：PC表示でのみ展開される公式広告文案 */}
+                <th className="hidden lg:table-cell p-2 md:p-4 font-black whitespace-nowrap min-w-[200px] w-[250px]">公式広告文案</th>
+                
                 <th className="p-2 md:p-4 font-black whitespace-nowrap text-right w-20 md:w-28">実売価格</th>
                 <th className="p-2 md:p-4 font-black whitespace-nowrap text-center w-24 md:w-32">平均評価</th>
                 <th className="p-2 md:p-4 font-black whitespace-nowrap text-right w-20 md:w-28">レビュー数</th>
                 <th className="p-2 md:p-4 font-black whitespace-nowrap w-24 md:w-32">テクノロジー</th>
                 <th className="p-2 md:p-4 font-black whitespace-nowrap w-20 md:w-24">防水</th>
+                
+                {/* 👑 追加：PC表示でのみ展開される販売サイトへの直接リンク */}
+                <th className="hidden lg:table-cell p-2 md:p-4 font-black whitespace-nowrap text-center w-28">販売サイト</th>
+                
                 <th className="p-2 md:p-4 font-black whitespace-nowrap text-center w-24 md:w-28">分析</th>
               </tr>
             </thead>
@@ -335,6 +342,14 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                       <div className="font-black text-mkt-text-main text-sm md:text-lg mb-1">{item.brand}</div>
                       <div className="text-[10px] md:text-xs font-bold text-mkt-text-sub line-clamp-2">{item.name}</div>
                     </td>
+                    
+                    {/* 👑 追加：PC表示でのみ展開される公式広告文案 */}
+                    <td className="hidden lg:table-cell p-2 md:p-4 align-middle">
+                      <div className="bg-slate-50 p-2 rounded border border-slate-200">
+                        <p className="text-xs font-bold italic text-mkt-text-main line-clamp-3">"{item.claims?.copy || '未設定'}"</p>
+                      </div>
+                    </td>
+
                     <td className="p-2 md:p-4 text-right align-middle">
                       <span className="font-black text-base md:text-xl text-mkt-text-main tracking-tight whitespace-nowrap">¥{item.price.toLocaleString()}</span>
                     </td>
@@ -350,6 +365,15 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                     <td className="p-2 md:p-4 align-middle">
                       <span className="text-[8px] md:text-[10px] bg-slate-100 text-slate-600 border border-slate-200 px-1 md:px-2 py-0.5 md:py-1 rounded font-black tracking-wider whitespace-nowrap">{item.waterproof}</span>
                     </td>
+                    
+                    {/* 👑 追加：PC表示でのみ展開される販売サイトへの直接リンク */}
+                    <td className="hidden lg:table-cell p-2 md:p-4 align-middle text-center">
+                      <div className="flex flex-col gap-1.5 justify-center items-center">
+                        {item.amazonUrl && <a href={item.amazonUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#FFFFFF' }} className="w-full bg-slate-800 text-[10px] font-black py-1.5 px-2 rounded flex justify-center items-center gap-1 hover:bg-slate-700 transition shadow-sm"><ShoppingCart size={12} /> Amazon</a>}
+                        {item.rakutenUrl && <a href={item.rakutenUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#FFFFFF' }} className="w-full bg-[#BF0000] text-[10px] font-black py-1.5 px-2 rounded flex justify-center items-center gap-1 hover:bg-[#990000] transition shadow-sm"><ShoppingCart size={12} /> 楽天市場</a>}
+                      </div>
+                    </td>
+
                     <td className="p-2 md:p-4 text-center align-middle">
                       <button onClick={() => {
                         if (!item.rawReviews || item.rawReviews.trim() === "") {
