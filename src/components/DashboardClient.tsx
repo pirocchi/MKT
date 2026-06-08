@@ -206,7 +206,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
           </div>
           
           <div className="hidden md:flex bg-mkt-surface border border-mkt-border px-4 py-2 rounded items-center gap-2 font-bold shadow-sm">
-            <Activity size={16} className="text-green-500" /> 統合運用システム連携完了
+            <Activity size={16} className="text-green-500" /> AI 連携完了
           </div>
         </div>
       </header>
