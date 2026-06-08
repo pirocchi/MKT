@@ -206,7 +206,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
           </div>
           
           <div className="hidden md:flex bg-mkt-surface border border-mkt-border px-4 py-2 rounded items-center gap-2 font-bold shadow-sm">
-            <Activity size={16} className="text-green-500" /> AI 連携完了
+            <Activity size={16} className="text-green-500" /> 統合運用システム連携完了
           </div>
         </div>
       </header>
@@ -275,7 +275,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                     <p className="text-sm font-bold italic text-mkt-text-main truncate">"{item.claims?.copy || '未設定'}"</p>
                   </div>
                   <div className="flex justify-between items-end pt-3">
-                    <span className="text-mkt-text-sub text-sm font-bold">顧客評価</span>
+                    <span className="text-mkt-text-sub font-bold">顧客評価</span>
                     <div className="flex items-baseline gap-3">
                       <span className="font-black text-yellow-500 text-2xl drop-shadow-sm">★ {item.averageRating || "-"}</span>
                       <span className="font-black text-mkt-asagi text-2xl">{item.reviews.toLocaleString()} <span className="text-sm font-bold">件</span></span>
@@ -303,19 +303,13 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                 <th className="p-2 md:p-4 font-black whitespace-nowrap w-10 md:w-16 text-center">選択</th>
                 <th className="p-2 md:p-4 font-black whitespace-nowrap w-16 md:w-24 text-center">画像</th>
                 <th className="p-2 md:p-4 font-black whitespace-nowrap min-w-[150px] md:min-w-[200px]">ブランド / 商品名</th>
-                
-                {/* 👑 追加：PC表示でのみ展開される公式広告文案 */}
                 <th className="hidden lg:table-cell p-2 md:p-4 font-black whitespace-nowrap min-w-[200px] w-[250px]">公式広告文案</th>
-                
                 <th className="p-2 md:p-4 font-black whitespace-nowrap text-right w-20 md:w-28">実売価格</th>
                 <th className="p-2 md:p-4 font-black whitespace-nowrap text-center w-24 md:w-32">平均評価</th>
                 <th className="p-2 md:p-4 font-black whitespace-nowrap text-right w-20 md:w-28">レビュー数</th>
                 <th className="p-2 md:p-4 font-black whitespace-nowrap w-24 md:w-32">テクノロジー</th>
                 <th className="p-2 md:p-4 font-black whitespace-nowrap w-20 md:w-24">防水</th>
-                
-                {/* 👑 追加：PC表示でのみ展開される販売サイトへの直接リンク */}
                 <th className="hidden lg:table-cell p-2 md:p-4 font-black whitespace-nowrap text-center w-28">販売サイト</th>
-                
                 <th className="p-2 md:p-4 font-black whitespace-nowrap text-center w-24 md:w-28">分析</th>
               </tr>
             </thead>
@@ -342,14 +336,11 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                       <div className="font-black text-mkt-text-main text-sm md:text-lg mb-1">{item.brand}</div>
                       <div className="text-[10px] md:text-xs font-bold text-mkt-text-sub line-clamp-2">{item.name}</div>
                     </td>
-                    
-                    {/* 👑 追加：PC表示でのみ展開される公式広告文案 */}
                     <td className="hidden lg:table-cell p-2 md:p-4 align-middle">
                       <div className="bg-slate-50 p-2 rounded border border-slate-200">
                         <p className="text-xs font-bold italic text-mkt-text-main line-clamp-3">"{item.claims?.copy || '未設定'}"</p>
                       </div>
                     </td>
-
                     <td className="p-2 md:p-4 text-right align-middle">
                       <span className="font-black text-base md:text-xl text-mkt-text-main tracking-tight whitespace-nowrap">¥{item.price.toLocaleString()}</span>
                     </td>
@@ -365,22 +356,19 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                     <td className="p-2 md:p-4 align-middle">
                       <span className="text-[8px] md:text-[10px] bg-slate-100 text-slate-600 border border-slate-200 px-1 md:px-2 py-0.5 md:py-1 rounded font-black tracking-wider whitespace-nowrap">{item.waterproof}</span>
                     </td>
-                    
-                    {/* 👑 追加：PC表示でのみ展開される販売サイトへの直接リンク */}
                     <td className="hidden lg:table-cell p-2 md:p-4 align-middle text-center">
                       <div className="flex flex-col gap-1.5 justify-center items-center">
                         {item.amazonUrl && <a href={item.amazonUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#FFFFFF' }} className="w-full bg-slate-800 text-[10px] font-black py-1.5 px-2 rounded flex justify-center items-center gap-1 hover:bg-slate-700 transition shadow-sm"><ShoppingCart size={12} /> Amazon</a>}
                         {item.rakutenUrl && <a href={item.rakutenUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#FFFFFF' }} className="w-full bg-[#BF0000] text-[10px] font-black py-1.5 px-2 rounded flex justify-center items-center gap-1 hover:bg-[#990000] transition shadow-sm"><ShoppingCart size={12} /> 楽天市場</a>}
                       </div>
                     </td>
-
                     <td className="p-2 md:p-4 text-center align-middle">
                       <button onClick={() => {
                         if (!item.rawReviews || item.rawReviews.trim() === "") {
                           alert("顧客評価データが登録されていません。"); return;
                         }
                         setPendingProduct(item);
-                      }} className="bg-mkt-makoto text-white px-2 py-1 md:px-4 md:py-2 rounded hover:bg-mkt-makoto/80 transition-colors font-black text-xs md:text-sm whitespace-nowrap shadow-sm">
+                      }} className="w-full bg-mkt-surface border-2 border-mkt-makoto text-mkt-makoto py-2 px-3 rounded hover:bg-mkt-makoto hover:text-white transition-colors font-black text-xs md:text-sm whitespace-nowrap shadow-sm">
                         分析実行
                       </button>
                     </td>
@@ -607,7 +595,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   <div className="flex-grow flex items-center justify-center font-bold text-mkt-text-sub">分析データがありません</div>
                 )}
 
-                {/* 統計パネルとレビュー一覧 */}
                 {!isAnalyzing && !errorMsg && reviewSummary && baseReviews.length > 0 && (
                   <div className="mt-12 pt-8 border-t-4 border-slate-100 animate-in fade-in duration-500">
                     <h4 className="font-bold tracking-widest text-mkt-text-main flex items-center gap-3 text-xl mb-6">
@@ -650,7 +637,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                       <MessageCircle className="text-mkt-asagi" /> 顧客評価一覧（生データ）
                     </h4>
 
-                    {/* フィルター＆ソート コントロールバー */}
                     <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg mb-6 flex flex-col xl:flex-row gap-4 items-start xl:items-center justify-between shadow-sm">
                       <div className="flex items-center gap-1 bg-slate-200/70 p-1 rounded-md">
                         <button 
