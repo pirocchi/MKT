@@ -14,6 +14,9 @@ type SentimentData = { sentiments: { name: string; value: number; color: string 
 type ProductPlan = { conceptName: string; targetPrice: string; coreFeatures: string[]; differentiation: string; mainCopy: string; };
 
 export default function DashboardClient({ initialData }: { initialData: Competitor[] }) {
+  // 👑 新設：画面全体のデータをリアルタイム管理する究極のローカルステート！
+  const [products, setProducts] = useState<Competitor[]>(initialData);
+
   const [selectedProduct, setSelectedProduct] = useState<Competitor | null>(null);
   const [editedProduct, setEditedProduct] = useState<Competitor | null>(null);
   
@@ -45,6 +48,12 @@ export default function DashboardClient({ initialData }: { initialData: Competit
 
   const inputClass = "w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm font-bold text-slate-800 focus:border-mkt-asagi outline-none transition-colors shadow-sm";
   const labelClass = "text-xs font-black text-slate-500 mb-1 block tracking-wider";
+
+  // 👑 メモの件数を安全にカウントするレーダー関数
+  const getNotesCount = (rawHumint?: string) => {
+    if (!rawHumint) return 0;
+    try { return JSON.parse(rawHumint).length; } catch { return 0; }
+  };
 
   const handleOpenDetail = (item: Competitor) => {
     setSelectedProduct(item);
@@ -99,7 +108,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
     }
   };
 
-  // 👑 ついに実装！データベースへの完全上書きAPIコール！
   const handleUpdateProduct = async () => {
     if (!editedProduct) return;
     setIsUpdatingProduct(true);
@@ -112,7 +120,10 @@ export default function DashboardClient({ initialData }: { initialData: Competit
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "更新に失敗しました");
       
-      alert("✅ データベース(MKT_DB)の製品情報を完璧に上書き更新しました！");
+      // 👑 編集した製品情報を画面のステートに完全同期！
+      setProducts(prev => prev.map(p => p.id === editedProduct.id ? editedProduct : p));
+      
+      alert("✅ データベースの製品情報を完璧に上書き更新しました！");
     } catch (err: any) {
       alert(`⚠️ データベース更新失敗: ${err.message}`);
     } finally {
@@ -142,9 +153,17 @@ export default function DashboardClient({ initialData }: { initialData: Competit
         category: noteCategory,
         note: noteText
       };
-      setLocalNotes(prev => [...prev, newNote]);
+      
+      // 👑 ここでローカルのメモ一覧、編集中のデータ、そして大元の製品一覧のすべてを同時更新！
+      const updatedNotes = [...localNotes, newNote];
+      setLocalNotes(updatedNotes);
+      
+      const updatedHumintStr = JSON.stringify(updatedNotes);
+      setEditedProduct(prev => prev ? { ...prev, rawHumint: updatedHumintStr } : null);
+      setProducts(prev => prev.map(p => p.id === editedProduct.id ? { ...p, rawHumint: updatedHumintStr } : p));
+      
       setNoteText("");
-      alert("✅ 現場入手メモを保存しました！");
+      alert("✅ 追加情報・メモを保存しました！");
     } catch (err: any) {
       alert(`⚠️ 書き込み失敗: ${err.message}`);
     } finally {
@@ -269,8 +288,10 @@ export default function DashboardClient({ initialData }: { initialData: Competit
 
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {initialData.map((item, index) => {
+          {products.map((item, index) => {
             const isSelected = selectedForPlan.some(p => p.id === item.id);
+            const noteCount = getNotesCount(item.rawHumint); // 👑 メモの件数を取得！
+            
             return (
               <div key={item.id || index} className={`bg-mkt-surface border-2 rounded-lg p-6 relative overflow-hidden group transition-all duration-300 flex flex-col shadow-sm ${isSelected ? 'border-mkt-makoto bg-mkt-makoto/5' : 'border-mkt-border hover:border-mkt-asagi'}`}>
                 <button onClick={() => togglePlanSelection(item)} className="absolute top-4 right-4 z-10 transition-colors">
@@ -287,7 +308,15 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                 </div>
 
                 <div className="flex justify-between items-start mb-4">
-                  <span className="text-xs font-bold text-white bg-mkt-asagi px-2 py-1 rounded">{item.classification}</span>
+                  <div className="flex gap-2">
+                    <span className="text-xs font-bold text-white bg-mkt-asagi px-2 py-1 rounded">{item.classification}</span>
+                    {/* 👑 メモが存在する場合、カード一覧にバッジを表示！ */}
+                    {noteCount > 0 && (
+                      <span className="text-[10px] bg-yellow-100 text-yellow-700 border border-yellow-300 px-2 py-1 rounded font-black tracking-wider flex items-center gap-1">
+                        📝 メモ {noteCount}件
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <h2 className="text-2xl font-bold mb-1 text-mkt-text-main">{item.brand}</h2>
                 <h3 className="text-mkt-text-sub text-sm mb-5 h-10 font-medium line-clamp-2">{item.name}</h3>
@@ -331,8 +360,10 @@ export default function DashboardClient({ initialData }: { initialData: Competit
               </tr>
             </thead>
             <tbody>
-              {initialData.map((item, index) => {
+              {products.map((item, index) => {
                 const isSelected = selectedForPlan.some(p => p.id === item.id);
+                const noteCount = getNotesCount(item.rawHumint); // 👑 メモ件数
+
                 return (
                   <tr key={item.id || index} className={`border-b border-slate-200 hover:bg-slate-50 transition-colors ${isSelected ? 'bg-mkt-makoto/5' : ''}`}>
                     <td className="p-2 md:p-4 text-center align-middle">
@@ -348,6 +379,14 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                     <td className="p-2 md:p-4 align-middle">
                       <div className="font-black text-mkt-text-main text-sm mb-1">{item.brand}</div>
                       <div className="text-xs font-bold text-mkt-text-sub line-clamp-2">{item.name}</div>
+                      {/* 👑 リスト表示用：商品名の下にメモバッジを表示！ */}
+                      {noteCount > 0 && (
+                        <div className="mt-1 inline-block">
+                          <span className="text-[10px] bg-yellow-100 text-yellow-700 border border-yellow-300 px-1.5 py-0.5 rounded font-black tracking-wider flex items-center gap-1">
+                            📝 メモ {noteCount}件
+                          </span>
+                        </div>
+                      )}
                     </td>
                     <td className="hidden lg:table-cell p-2 md:p-4 align-middle">
                       <div className="bg-slate-50 p-2 rounded border border-slate-200">
@@ -404,13 +443,12 @@ export default function DashboardClient({ initialData }: { initialData: Competit
 
             <div className="flex flex-col lg:flex-row h-full overflow-hidden">
               
-              {/* 左ペイン：製品情報の完全編集 ＆ 現場入手メモ */}
+              {/* 左ペイン：製品情報の完全編集 ＆ 追加情報メモ */}
               <div className="p-6 lg:w-1/2 border-r border-mkt-border bg-slate-50 overflow-y-auto relative flex flex-col">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-xl font-black text-mkt-text-main flex items-center gap-2">
                     <FileText className="text-mkt-asagi" /> 製品データの確認・編集
                   </h3>
-                  {/* 👑 ボタン配色を劇的に改善！ */}
                   <button onClick={handleUpdateProduct} disabled={isUpdatingProduct} className="bg-mkt-surface border-2 border-mkt-asagi text-mkt-asagi hover:bg-mkt-asagi hover:text-white font-black py-2 px-4 rounded shadow-sm flex items-center gap-2 text-sm transition-colors disabled:opacity-50">
                     {isUpdatingProduct ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                     データベースを更新
@@ -418,7 +456,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                 </div>
 
                 <div className="space-y-6">
-                  {/* 基本情報グループ */}
                   <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
                     <h4 className="text-sm font-black text-slate-700 border-b border-slate-100 pb-2 mb-4">基本情報</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -430,7 +467,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                     </div>
                   </div>
 
-                  {/* ハードウェア仕様グループ */}
                   <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
                     <h4 className="text-sm font-black text-slate-700 border-b border-slate-100 pb-2 mb-4">ハードウェア仕様</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -440,7 +476,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                     </div>
                   </div>
 
-                  {/* 公式の訴求内容グループ */}
                   <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
                     <h4 className="text-sm font-black text-slate-700 border-b border-slate-100 pb-2 mb-4">公式の訴求内容</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -456,11 +491,11 @@ export default function DashboardClient({ initialData }: { initialData: Competit
 
                 <div className="mt-8 mb-4 p-5 bg-white border-l-4 border-mkt-makoto border-y border-r border-slate-200 rounded shadow-sm">
                   <h4 className="text-sm text-mkt-makoto font-black tracking-widest mb-3 flex items-center gap-2">
-                    追加情報・メモ
+                    <Brain size={16} /> 追加情報・メモ
                   </h4>
                   
                   {localNotes.length === 0 ? (
-                    <p className="text-xs text-slate-400 italic mb-4 font-bold">現在、この製品に関する現場情報は登録されていません。</p>
+                    <p className="text-xs text-slate-400 italic mb-4 font-bold">現在、この製品に関する追加情報は登録されていません。</p>
                   ) : (
                     <div className="space-y-3 mb-4 max-h-48 overflow-y-auto pr-2">
                       {localNotes.map((n, i) => (
@@ -478,7 +513,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   <div className="border-t border-slate-200 pt-4 mt-2">
                     <span className="text-[10px] text-mkt-asagi font-black block mb-2 tracking-wider">新しい情報を追記する</span>
                     <div className="grid grid-cols-2 gap-3 mb-3">
-                      <input type="text" placeholder="投稿者 (例: 山田)" value={noteAuthor} onChange={(e) => setNoteAuthor(e.target.value)} className={inputClass} />
+                      <input type="text" placeholder="投稿者 (例: 渡辺)" value={noteAuthor} onChange={(e) => setNoteAuthor(e.target.value)} className={inputClass} />
                       <select value={noteCategory} onChange={(e) => setNoteCategory(e.target.value)} className={`${inputClass} cursor-pointer`}>
                         <option value="商談・メーカー情報">商談・メーカー情報</option>
                         <option value="市場・競合調査">市場・競合調査</option>
@@ -487,9 +522,8 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                       </select>
                     </div>
                     <textarea placeholder="商談で得た裏話や未公開情報などを入力..." value={noteText} onChange={(e) => setNoteText(e.target.value)} rows={3} className={`${inputClass} resize-none mb-3`} />
-                    {/* 👑 ボタン配色を劇的に改善！ */}
                     <button onClick={handleSaveNote} disabled={isSavingNote} className="w-full bg-mkt-surface border-2 border-mkt-makoto text-mkt-makoto hover:bg-mkt-makoto hover:text-white font-black py-2.5 rounded text-sm transition-colors shadow-sm flex justify-center items-center gap-2 disabled:opacity-50">
-                      {isSavingNote ? <Loader2 size={16} className="animate-spin" /> : "🛡️ 極秘メモをデータベースに保存"}
+                      {isSavingNote ? <Loader2 size={16} className="animate-spin" /> : "🛡️ 追加情報・メモを保存"}
                     </button>
                   </div>
                 </div>
@@ -502,7 +536,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                     <Crosshair className="text-mkt-makoto" /> AI統合分析 ＆ 顧客評価
                   </h4>
                   
-                  {/* 👑 ボタン配色を劇的に改善！ */}
                   {!isAnalyzing && !analyzedData && (
                     <button onClick={() => setPendingProduct(editedProduct)} className="bg-mkt-surface border-2 border-mkt-makoto text-mkt-makoto hover:bg-mkt-makoto hover:text-white font-bold py-2 px-4 rounded shadow-sm flex items-center gap-2 text-sm transition-colors animate-pulse hover:animate-none">
                       <Brain size={16} /> AI分析を実行する
@@ -519,7 +552,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   <div className="flex-grow flex flex-col items-center justify-center text-mkt-makoto border-2 border-dashed border-mkt-makoto/20 rounded-lg m-4">
                     <Loader2 className="animate-spin mb-6" size={64} />
                     <p className="tracking-widest font-bold text-lg animate-pulse">分析処理を実行中...</p>
-                    <p className="text-xs font-bold text-mkt-text-sub mt-4">編集された製品情報と極秘メモをコンテキストに統合しています</p>
+                    <p className="text-xs font-bold text-mkt-text-sub mt-4">編集された製品情報と追加情報をコンテキストに統合しています</p>
                   </div>
                 ) : errorMsg ? (
                   <div className="flex-grow flex items-center justify-center text-mkt-makoto font-bold border border-mkt-makoto/50 p-4 rounded bg-mkt-makoto/5 m-4">{errorMsg}</div>
@@ -527,7 +560,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   <div className="flex-grow flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-300 rounded-lg m-4 p-8 text-center">
                     <Brain size={64} className="mb-4 text-slate-300" />
                     <h3 className="text-lg font-black text-slate-600 mb-2">分析スタンバイ完了</h3>
-                    <p className="text-sm font-bold leading-relaxed">左側のパネルで製品情報の確認・編集、および極秘メモの入力を行ってください。<br/>準備が完了したら、右上の「AI分析を実行する」ボタンを押して分析を開始します。</p>
+                    <p className="text-sm font-bold leading-relaxed">左側のパネルで製品情報の確認・編集、および追加情報の入力を行ってください。<br/>準備が完了したら、右上の「AI分析を実行する」ボタンを押して分析を開始します。</p>
                   </div>
                 ) : (
                   <div className="animate-in fade-in slide-in-from-right-8 duration-500 flex flex-col gap-8">
@@ -595,7 +628,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   </div>
                 )}
 
-                {/* 以下、評価統計とレビュー一覧（既存コードと同じ） */}
+                {/* 以下、評価統計とレビュー一覧 */}
                 {!isAnalyzing && !errorMsg && reviewSummary && baseReviews.length > 0 && (
                   <div className="mt-12 pt-8 border-t-4 border-slate-100 animate-in fade-in duration-500">
                     <h4 className="font-bold tracking-widest text-mkt-text-main flex items-center gap-3 text-xl mb-6">
