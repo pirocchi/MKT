@@ -8,7 +8,6 @@ function getAuthClient() {
       client_email: process.env.GOOGLE_CLIENT_EMAIL,
       private_key: privateKey,
     },
-    // 💥【超重要】書き込み権限を開放するために「readonly」を消去！！！
     scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   });
 }
@@ -18,7 +17,6 @@ export async function getCompetitorData() {
     const auth = getAuthClient();
     const sheets = google.sheets({ version: "v4", auth });
     
-    // 💥【超進化】HUMINT_Notes（極秘メモ）シートも同時に取得！！！
     const [dbResponse, revResponse, humintResponse] = await Promise.all([
       sheets.spreadsheets.values.get({
         spreadsheetId: process.env.SPREADSHEET_ID,
@@ -30,8 +28,8 @@ export async function getCompetitorData() {
       }),
       sheets.spreadsheets.values.get({
         spreadsheetId: process.env.SPREADSHEET_ID,
-        range: "HUMINT_Notes!A2:E", // A:MKT-ID, B:投稿日時, C:投稿者, D:カテゴリ, E:メモ内容
-      }).catch(() => ({ data: { values: [] } })) // シートがない場合のクラッシュ回避
+        range: "HUMINT_Notes!A2:E",
+      }).catch(() => ({ data: { values: [] } }))
     ]);
 
     const dbRows = dbResponse.data.values;
@@ -40,7 +38,6 @@ export async function getCompetitorData() {
 
     if (!dbRows || dbRows.length === 0) return [];
 
-    // 👑 レビューの仕分け
     const reviewsMap: Record<string, any[]> = {};
     revRows.forEach((row) => {
       const mktId = row[0];
@@ -57,7 +54,6 @@ export async function getCompetitorData() {
       });
     });
 
-    // 👑 HUMINT（極秘メモ）の仕分け
     const humintMap: Record<string, any[]> = {};
     humintRows.forEach((row) => {
       const mktId = row[0];
@@ -72,7 +68,6 @@ export async function getCompetitorData() {
       });
     });
 
-    // 👑 データの結合と完全マッピング！
     return dbRows.map((row) => {
       const id = row[0] || "-";
       const productReviews = reviewsMap[id] || []; 
@@ -102,7 +97,7 @@ export async function getCompetitorData() {
         amazonUrl: row[18] || "",    
         rakutenUrl: row[19] || "",   
         rawReviews: productReviews.length > 0 ? JSON.stringify(productReviews) : "", 
-        rawHumint: productHumint.length > 0 ? JSON.stringify(productHumint) : "", // 👑 新規追加：極秘情報をセット！
+        rawHumint: productHumint.length > 0 ? JSON.stringify(productHumint) : "",
       };
     });
   } catch (error) {
@@ -111,7 +106,6 @@ export async function getCompetitorData() {
   }
 }
 
-// 💥 新規追加：極秘メモ（HUMINT）をスプレッドシートに直接書き込む専用メソッド！！！
 export async function appendNoteToSheet(mktId: string, { note, category, author, timestamp }: { note: string, category: string, author: string, timestamp: string }) {
   const auth = getAuthClient();
   const sheets = google.sheets({ version: "v4", auth });
@@ -128,13 +122,15 @@ export async function appendNoteToSheet(mktId: string, { note, category, author,
   });
 }
 
-// 💥 新規追加：編集された製品データをMKT_DBシートに上書き保存するメソッド！！！
+// 💥 ここが完全新規追加＆超絶強化されたデータベース同期メソッド！！！
 export async function updateProductInSheet(productData: any) {
   const auth = getAuthClient();
   const sheets = google.sheets({ version: "v4", auth });
   const spreadsheetId = process.env.SPREADSHEET_ID;
 
-  // 1. MKT_DBの「A列(MKT-ID)」だけを取得して、書き換えるべき行番号を索敵する
+  // ==========================================
+  // 1. MKT_DB（基本情報）の更新処理
+  // ==========================================
   const idResponse = await sheets.spreadsheets.values.get({
     spreadsheetId,
     range: "MKT_DB!A:A",
@@ -142,13 +138,11 @@ export async function updateProductInSheet(productData: any) {
   const rows = idResponse.data.values;
   if (!rows) throw new Error("データベースが空です");
 
-  // 対象のMKT-IDが何行目にあるか特定（見つからなければエラー）
   const rowIndex = rows.findIndex(row => row[0] === productData.id);
   if (rowIndex === -1) throw new Error(`対象の製品(ID: ${productData.id})がデータベースに見つかりません`);
 
-  const rowNumber = rowIndex + 1; // APIの指定は1始まりのため
+  const rowNumber = rowIndex + 1;
 
-  // 2. A列からT列まで、スプレッドシートの並び順通りに配列を再構築
   const values = [
     [
       productData.id,
@@ -159,8 +153,8 @@ export async function updateProductInSheet(productData: any) {
       productData.tech,
       productData.waterproof,
       productData.pins,
-      productData.reviews, // I列
-      productData.claims?.target || "", // J列から公式訴求
+      productData.reviews,
+      productData.claims?.target || "",
       productData.claims?.problem || "",
       productData.claims?.usp || "",
       productData.claims?.pain || "",
@@ -170,15 +164,69 @@ export async function updateProductInSheet(productData: any) {
       productData.averageRating,
       productData.imageUrl,
       productData.amazonUrl,
-      productData.rakutenUrl // T列
+      productData.rakutenUrl
     ]
   ];
 
-  // 3. 特定した行の範囲（A行〜T行）をピンポイントで上書き爆撃！
   await sheets.spreadsheets.values.update({
     spreadsheetId,
     range: `MKT_DB!A${rowNumber}:T${rowNumber}`,
     valueInputOption: "USER_ENTERED",
     requestBody: { values },
   });
+
+  // ==========================================
+  // 2. HUMINT_Notes（極秘メモ）シートの完全同期処理（削除対応）
+  // ==========================================
+  if (productData.rawHumint !== undefined) {
+    let updatedNotes: any[] = [];
+    if (productData.rawHumint.trim() !== "") {
+      try {
+        updatedNotes = JSON.parse(productData.rawHumint);
+      } catch (e) {
+        console.error("メモのJSONパースエラー:", e);
+      }
+    }
+
+    // シートから全メモを取得
+    const humintResponse = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: "HUMINT_Notes!A:E",
+    }).catch(() => null);
+
+    const humintRows = humintResponse?.data?.values || [];
+    const header = humintRows.length > 0 && humintRows[0][0] === "MKT-ID" 
+      ? humintRows[0] 
+      : ["MKT-ID", "投稿日時", "投稿者", "カテゴリ", "メモ内容"];
+
+    // 他の製品のメモだけを残す（今回の製品の古いメモ＝消されたメモを含む履歴はすべて一旦リセット）
+    const otherNotes = humintRows.filter((row, index) => {
+      if (index === 0 && row[0] === "MKT-ID") return false; // ヘッダー除外
+      return row[0] !== productData.id;
+    });
+
+    // 画面上で生き残っている「最新のメモ一覧」だけを再構築
+    const newNotesRows = updatedNotes.map(n => [
+      productData.id, 
+      n.date, 
+      n.author, 
+      n.category, 
+      n.note
+    ]);
+
+    const finalRows = [header, ...otherNotes, ...newNotesRows];
+
+    // シートを一旦クリアして完全上書き！これでもうゾンビ復活は絶対に起きない！
+    await sheets.spreadsheets.values.clear({
+      spreadsheetId,
+      range: "HUMINT_Notes!A:E",
+    });
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: "HUMINT_Notes!A1",
+      valueInputOption: "USER_ENTERED",
+      requestBody: { values: finalRows },
+    });
+  }
 }
