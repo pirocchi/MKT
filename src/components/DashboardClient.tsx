@@ -308,7 +308,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
             <span className="text-mkt-makoto">MKT</span><span>競合分析画面</span>
           </h1>
           <p className="text-mkt-asagi text-xs md:text-sm mt-2 tracking-widest flex items-center gap-2 font-bold">
-            <Eye size={16} /> 競合製品の市場評価と方針の比較
+            競合製品の市場評価と方針の比較
           </p>
         </div>
         <div className="flex gap-4 items-center">
@@ -382,7 +382,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                 </div>
 
                 <button onClick={() => handleOpenDetail(item)} className="w-full bg-mkt-surface border-2 border-mkt-makoto text-mkt-makoto py-3 rounded hover:bg-mkt-makoto hover:text-white transition-colors font-black tracking-wider flex justify-center items-center gap-2 text-lg">
-                  <Target size={20} /> 詳細確認 ＆ 分析
+                  詳細確認 ＆ 分析
                 </button>
               </div>
             );
@@ -534,7 +534,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
 
                 <div className="mt-8 mb-4 p-5 bg-white border-l-4 border-mkt-makoto border-y border-r border-slate-200 rounded shadow-sm">
                   <h4 className="text-sm text-mkt-makoto font-black tracking-widest mb-3 flex items-center gap-2">
-                    <Brain size={16} /> 追加情報・メモ
+                    追加情報・メモ
                   </h4>
                   
                   {localNotes.length === 0 ? (
