@@ -564,7 +564,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   <div className="border-t border-slate-200 pt-4 mt-2">
                     <span className="text-[10px] text-mkt-asagi font-black block mb-2 tracking-wider">新しい情報を追記する</span>
                     <div className="grid grid-cols-2 gap-3 mb-3">
-                      <input type="text" placeholder="投稿者 (例: 渡辺)" value={noteAuthor} onChange={(e) => setNoteAuthor(e.target.value)} className={inputClass} />
+                      <input type="text" placeholder="投稿者 (例: 山田)" value={noteAuthor} onChange={(e) => setNoteAuthor(e.target.value)} className={inputClass} />
                       <select value={noteCategory} onChange={(e) => setNoteCategory(e.target.value)} className={`${inputClass} cursor-pointer`}>
                         <option value="商談・メーカー情報">商談・メーカー情報</option>
                         <option value="市場・競合調査">市場・競合調査</option>
