@@ -126,7 +126,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
       setProducts(prev => prev.map(p => p.id === payload.id ? payload : p));
       setEditedProduct(payload); // ステート更新
       
-      alert("✅ データベースの製品情報を完璧に上書き更新しました！");
+      alert("✅ データベースの製品情報を上書き更新しました。フロントエンドの同期には少し時間がかかる場合があります。");
     } catch (err: any) {
       alert(`⚠️ データベース更新失敗: ${err.message}`);
     } finally {
