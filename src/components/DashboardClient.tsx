@@ -15,7 +15,7 @@ type ProductPlan = { conceptName: string; targetPrice: string; coreFeatures: str
 
 export default function DashboardClient({ initialData }: { initialData: Competitor[] }) {
   const [selectedProduct, setSelectedProduct] = useState<Competitor | null>(null);
-  const [editedProduct, setEditedProduct] = useState<Competitor | null>(null); // 👑 全情報編集用のステート
+  const [editedProduct, setEditedProduct] = useState<Competitor | null>(null);
   
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analyzedData, setAnalyzedData] = useState<SentimentData | null>(null);
@@ -36,21 +36,19 @@ export default function DashboardClient({ initialData }: { initialData: Competit
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  // 👑 横ハラ排除！「現場入手・極秘メモ」用のステート
   const [localNotes, setLocalNotes] = useState<any[]>([]);
   const [noteAuthor, setNoteAuthor] = useState("");
   const [noteCategory, setNoteCategory] = useState("商談・メーカー情報");
   const [noteText, setNoteText] = useState("");
   const [isSavingNote, setIsSavingNote] = useState(false);
+  const [isUpdatingProduct, setIsUpdatingProduct] = useState(false);
 
-  // 👑 フォーム用共通CSSクラス
   const inputClass = "w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm font-bold text-slate-800 focus:border-mkt-asagi outline-none transition-colors shadow-sm";
   const labelClass = "text-xs font-black text-slate-500 mb-1 block tracking-wider";
 
-  // 👑 一覧から「詳細画面」を開く処理（分析はまだしない）
   const handleOpenDetail = (item: Competitor) => {
     setSelectedProduct(item);
-    setEditedProduct(JSON.parse(JSON.stringify(item))); // ディープコピーで編集用ステートを作成
+    setEditedProduct(JSON.parse(JSON.stringify(item))); 
     setAnalyzedData(null);
     setErrorMsg("");
     setVisibleReviewCount(50);
@@ -64,7 +62,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
 
   const executeAnalysis = async (modelType: string) => {
     if (pendingProduct) {
-      const item = pendingProduct; // 編集済みのデータが渡ってくる
+      const item = pendingProduct; 
       setPendingProduct(null);
       
       const humintNotesText = localNotes.map((n: any) => `[${n.date}][${n.author}][${n.category}] ${n.note}`).join('\n');
@@ -101,13 +99,27 @@ export default function DashboardClient({ initialData }: { initialData: Competit
     }
   };
 
-  // 👑 製品情報の全体更新（今回はUIのみ。APIは後日）
+  // 👑 ついに実装！データベースへの完全上書きAPIコール！
   const handleUpdateProduct = async () => {
     if (!editedProduct) return;
-    alert("【システム通知】製品情報の更新リクエストを受理しました！\n\n※フロントエンドの全項目編集機能は完成しています。次回、このデータをスプレッドシート(MKT_DB)へ上書き保存するためのバックエンドAPI『/api/update-product』を錬成いたしましょう！");
+    setIsUpdatingProduct(true);
+    try {
+      const res = await fetch('/api/update-product', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editedProduct)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "更新に失敗しました");
+      
+      alert("✅ データベース(MKT_DB)の製品情報を完璧に上書き更新しました！");
+    } catch (err: any) {
+      alert(`⚠️ データベース更新失敗: ${err.message}`);
+    } finally {
+      setIsUpdatingProduct(false);
+    }
   };
 
-  // 👑 極秘メモの保存
   const handleSaveNote = async () => {
     if (!editedProduct || !noteText.trim()) return;
     setIsSavingNote(true);
@@ -132,7 +144,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
       };
       setLocalNotes(prev => [...prev, newNote]);
       setNoteText("");
-      alert("✅ 極秘メモを保存しました！");
+      alert("✅ 現場入手メモを保存しました！");
     } catch (err: any) {
       alert(`⚠️ 書き込み失敗: ${err.message}`);
     } finally {
@@ -296,7 +308,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   </div>
                 </div>
 
-                {/* 👑 ボタン名を「詳細確認 ＆ 分析」に変更 */}
                 <button onClick={() => handleOpenDetail(item)} className="w-full bg-mkt-surface border-2 border-mkt-makoto text-mkt-makoto py-3 rounded hover:bg-mkt-makoto hover:text-white transition-colors font-black tracking-wider flex justify-center items-center gap-2 text-lg">
                   <Target size={20} /> 詳細確認 ＆ 分析
                 </button>
@@ -307,7 +318,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
       ) : (
         <div className="bg-mkt-surface border border-mkt-border rounded-lg overflow-x-auto shadow-sm pb-4">
           <table className="w-full text-left border-collapse min-w-[600px] lg:min-w-[1200px]">
-            {/* テーブルヘッダー省略せずにそのまま */}
             <thead>
               <tr className="bg-slate-100 text-slate-600 border-b-2 border-slate-300 text-xs md:text-sm">
                 <th className="p-2 md:p-4 font-black whitespace-nowrap text-center">選択</th>
@@ -386,7 +396,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
         </div>
       )}
 
-      {/* 👑 刷新：個別製品の詳細編集 ＆ 分析モーダル */}
+      {/* 個別製品の詳細編集 ＆ 分析モーダル */}
       {selectedProduct && editedProduct && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-mkt-surface border border-mkt-border rounded-xl w-full max-w-[95vw] h-[95vh] flex flex-col relative overflow-hidden shadow-2xl">
@@ -394,14 +404,16 @@ export default function DashboardClient({ initialData }: { initialData: Competit
 
             <div className="flex flex-col lg:flex-row h-full overflow-hidden">
               
-              {/* 👑 左ペイン：製品情報の完全編集 ＆ 現場入手・極秘メモ */}
+              {/* 左ペイン：製品情報の完全編集 ＆ 現場入手メモ */}
               <div className="p-6 lg:w-1/2 border-r border-mkt-border bg-slate-50 overflow-y-auto relative flex flex-col">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-xl font-black text-mkt-text-main flex items-center gap-2">
                     <FileText className="text-mkt-asagi" /> 製品データの確認・編集
                   </h3>
-                  <button onClick={handleUpdateProduct} className="bg-mkt-asagi hover:bg-blue-600 text-white font-bold py-2 px-4 rounded shadow-sm flex items-center gap-2 text-sm transition-colors">
-                    <Save size={16} /> データベースを更新
+                  {/* 👑 ボタン配色を劇的に改善！ */}
+                  <button onClick={handleUpdateProduct} disabled={isUpdatingProduct} className="bg-mkt-surface border-2 border-mkt-asagi text-mkt-asagi hover:bg-mkt-asagi hover:text-white font-black py-2 px-4 rounded shadow-sm flex items-center gap-2 text-sm transition-colors disabled:opacity-50">
+                    {isUpdatingProduct ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                    データベースを更新
                   </button>
                 </div>
 
@@ -442,7 +454,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   </div>
                 </div>
 
-                {/* 👑 新装：現場入手・極秘メモ セクション（横ハラ排除＆配色改善） */}
                 <div className="mt-8 mb-4 p-5 bg-white border-l-4 border-mkt-makoto border-y border-r border-slate-200 rounded shadow-sm">
                   <h4 className="text-sm text-mkt-makoto font-black tracking-widest mb-3 flex items-center gap-2">
                     <Brain size={16} /> 現場入手・極秘メモ
@@ -476,28 +487,29 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                       </select>
                     </div>
                     <textarea placeholder="商談で得た裏話や未公開情報などを入力..." value={noteText} onChange={(e) => setNoteText(e.target.value)} rows={3} className={`${inputClass} resize-none mb-3`} />
-                    <button onClick={handleSaveNote} disabled={isSavingNote} className="w-full bg-mkt-makoto hover:bg-red-700 text-white font-black py-2.5 rounded text-sm transition-colors shadow-sm flex justify-center items-center gap-2 disabled:opacity-50">
+                    {/* 👑 ボタン配色を劇的に改善！ */}
+                    <button onClick={handleSaveNote} disabled={isSavingNote} className="w-full bg-mkt-surface border-2 border-mkt-makoto text-mkt-makoto hover:bg-mkt-makoto hover:text-white font-black py-2.5 rounded text-sm transition-colors shadow-sm flex justify-center items-center gap-2 disabled:opacity-50">
                       {isSavingNote ? <Loader2 size={16} className="animate-spin" /> : "🛡️ 極秘メモをデータベースに保存"}
                     </button>
                   </div>
                 </div>
               </div>
 
-              {/* 👑 右ペイン：AI統合分析 ＆ レビュー統計 */}
+              {/* 右ペイン：AI統合分析 ＆ レビュー統計 */}
               <div className="p-6 lg:w-1/2 flex flex-col bg-mkt-surface overflow-y-auto">
                 <div className="flex justify-between items-center mb-6 border-b border-mkt-border pb-4 pr-12">
                   <h4 className="font-bold tracking-widest text-mkt-text-main flex items-center gap-3 text-xl">
                     <Crosshair className="text-mkt-makoto" /> AI統合分析 ＆ 顧客評価
                   </h4>
                   
-                  {/* 👑 分析前（待機状態）のボタン配置 */}
+                  {/* 👑 ボタン配色を劇的に改善！ */}
                   {!isAnalyzing && !analyzedData && (
-                    <button onClick={() => setPendingProduct(editedProduct)} className="bg-mkt-makoto hover:bg-red-700 text-white font-bold py-2 px-4 rounded shadow-sm flex items-center gap-2 text-sm animate-pulse hover:animate-none">
+                    <button onClick={() => setPendingProduct(editedProduct)} className="bg-mkt-surface border-2 border-mkt-makoto text-mkt-makoto hover:bg-mkt-makoto hover:text-white font-bold py-2 px-4 rounded shadow-sm flex items-center gap-2 text-sm transition-colors animate-pulse hover:animate-none">
                       <Brain size={16} /> AI分析を実行する
                     </button>
                   )}
                   {analyzedData && (
-                    <button onClick={() => setPendingProduct(editedProduct)} className="bg-slate-800 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded shadow-sm flex items-center gap-2 text-xs">
+                    <button onClick={() => setPendingProduct(editedProduct)} className="bg-mkt-surface border-2 border-mkt-makoto text-mkt-makoto hover:bg-mkt-makoto hover:text-white font-bold py-2 px-4 rounded shadow-sm flex items-center gap-2 text-xs transition-colors">
                       <Brain size={14} /> 最新の情報で再分析
                     </button>
                   )}

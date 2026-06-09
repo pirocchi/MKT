@@ -127,3 +127,58 @@ export async function appendNoteToSheet(mktId: string, { note, category, author,
     },
   });
 }
+
+// 💥 新規追加：編集された製品データをMKT_DBシートに上書き保存するメソッド！！！
+export async function updateProductInSheet(productData: any) {
+  const auth = getAuthClient();
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = process.env.SPREADSHEET_ID;
+
+  // 1. MKT_DBの「A列(MKT-ID)」だけを取得して、書き換えるべき行番号を索敵する
+  const idResponse = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: "MKT_DB!A:A",
+  });
+  const rows = idResponse.data.values;
+  if (!rows) throw new Error("データベースが空です");
+
+  // 対象のMKT-IDが何行目にあるか特定（見つからなければエラー）
+  const rowIndex = rows.findIndex(row => row[0] === productData.id);
+  if (rowIndex === -1) throw new Error(`対象の製品(ID: ${productData.id})がデータベースに見つかりません`);
+
+  const rowNumber = rowIndex + 1; // APIの指定は1始まりのため
+
+  // 2. A列からT列まで、スプレッドシートの並び順通りに配列を再構築
+  const values = [
+    [
+      productData.id,
+      productData.classification,
+      productData.brand,
+      productData.name,
+      productData.price,
+      productData.tech,
+      productData.waterproof,
+      productData.pins,
+      productData.reviews, // I列
+      productData.claims?.target || "", // J列から公式訴求
+      productData.claims?.problem || "",
+      productData.claims?.usp || "",
+      productData.claims?.pain || "",
+      productData.claims?.ease || "",
+      productData.claims?.copy || "",
+      productData.scrapedDate,
+      productData.averageRating,
+      productData.imageUrl,
+      productData.amazonUrl,
+      productData.rakutenUrl // T列
+    ]
+  ];
+
+  // 3. 特定した行の範囲（A行〜T行）をピンポイントで上書き爆撃！
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: `MKT_DB!A${rowNumber}:T${rowNumber}`,
+    valueInputOption: "USER_ENTERED",
+    requestBody: { values },
+  });
+}
