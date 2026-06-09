@@ -7,6 +7,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 type Competitor = {
   id: string; classification: string; brand: string; name: string; price: number; tech: string; waterproof: string; pins: string; reviews: number; rawReviews?: string; scrapedDate?: string; averageRating?: string; imageUrl?: string; amazonUrl?: string; rakutenUrl?: string;
   claims?: { target: string; problem: string; usp: string; pain: string; ease: string; copy: string; };
+  rawHumint?: string;
 };
 type GapAnalysis = { theme: string; claim: string; reality: string; assessment: string; opportunity: string; };
 type SentimentData = { sentiments: { name: string; value: number; color: string }[]; gapAnalysis: GapAnalysis[]; };
@@ -33,9 +34,18 @@ export default function DashboardClient({ initialData }: { initialData: Competit
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
+  // HUMINT（極秘メモ）入力・管理用のローカルステート
+  const [localNotes, setLocalNotes] = useState<any[]>([]);
+  const [noteAuthor, setNoteAuthor] = useState("");
+  const [noteCategory, setNoteCategory] = useState("商談・メーカー情報");
+  const [noteText, setNoteText] = useState("");
+  const [isSavingNote, setIsSavingNote] = useState(false);
+
   const executeAnalysis = async (modelType: string) => {
     if (pendingProduct) {
       const item = pendingProduct;
+      const isReanalyzing = selectedProduct && selectedProduct.id === item.id;
+
       setPendingProduct(null);
       setSelectedProduct(item); 
       setAnalyzedData(null); 
@@ -46,6 +56,18 @@ export default function DashboardClient({ initialData }: { initialData: Competit
       setFilterPeriod('ALL');
       setFilterRating('ALL');
       setSortOrder('DATE_DESC');
+
+      // 再分析の場合は現在のローカルメモを使用し、新規ロードの場合は初期データを使用
+      let currentNotes = [];
+      if (isReanalyzing) {
+        currentNotes = localNotes;
+      } else {
+        currentNotes = item.rawHumint ? JSON.parse(item.rawHumint) : [];
+        setLocalNotes(currentNotes);
+        setNoteText("");
+      }
+
+      const humintNotesText = currentNotes.map((n: any) => `[${n.date}][${n.author}][${n.category}] ${n.note}`).join('\n');
       
       setIsAnalyzing(true);
       try {
@@ -55,7 +77,8 @@ export default function DashboardClient({ initialData }: { initialData: Competit
             reviewsText: item.rawReviews, 
             claims: item.claims || {}, 
             averageRating: item.averageRating || "-",
-            model: modelType 
+            model: modelType,
+            humintNotes: humintNotesText
           })
         });
         const data = await res.json();
@@ -75,6 +98,38 @@ export default function DashboardClient({ initialData }: { initialData: Competit
         if (!res.ok) throw new Error(data.error || "企画案の作成に失敗しました");
         setPlanData(data.productPlan);
       } catch (err: any) { alert(`処理に失敗しました: ${err.message}`); } finally { setIsGeneratingPlan(false); }
+    }
+  };
+
+  const handleSaveNote = async () => {
+    if (!selectedProduct || !noteText.trim()) return;
+    setIsSavingNote(true);
+    try {
+      const res = await fetch('/api/save-note', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mktId: selectedProduct.id,
+          note: noteText,
+          category: noteCategory,
+          author: noteAuthor || "匿名ユーザー"
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "保存に失敗しました");
+      
+      const newNote = {
+        date: new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
+        author: noteAuthor || "匿名ユーザー",
+        category: noteCategory,
+        note: noteText
+      };
+      setLocalNotes(prev => [...prev, newNote]);
+      setNoteText("");
+      alert("秘匿情報を保存しました");
+    } catch (err: any) {
+      alert(`書き込み失敗: ${err.message}`);
+    } finally {
+      setIsSavingNote(false);
     }
   };
 
@@ -465,46 +520,101 @@ export default function DashboardClient({ initialData }: { initialData: Competit
             <button onClick={() => setSelectedProduct(null)} className="absolute top-4 right-4 text-mkt-text-sub hover:text-mkt-makoto transition-colors z-20 bg-slate-100 hover:bg-slate-200 p-2 rounded-full shadow-sm"><X size={28} /></button>
 
             <div className="flex flex-col lg:flex-row h-full overflow-hidden">
-              <div className="p-8 lg:w-1/3 border-r border-mkt-border bg-slate-50 overflow-y-auto relative">
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-xs font-bold text-white bg-mkt-asagi px-2 py-1 rounded shadow-sm">{selectedProduct.classification}</span>
-                </div>
-
-                {selectedProduct.imageUrl && (
-                  <div className="w-full h-48 mb-6 bg-white border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden shadow-sm">
-                    <img src={selectedProduct.imageUrl} alt={selectedProduct.name} className="object-contain w-full h-full p-4 mix-blend-multiply" />
+              <div className="p-8 lg:w-1/3 border-r border-mkt-border bg-slate-50 overflow-y-auto relative flex flex-col justify-between">
+                <div>
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-xs font-bold text-white bg-mkt-asagi px-2 py-1 rounded shadow-sm">{selectedProduct.classification}</span>
                   </div>
-                )}
-                
-                <h2 className="text-3xl font-bold mb-1 text-mkt-text-main">{selectedProduct.brand}</h2>
-                <h3 className="text-mkt-text-sub font-bold text-lg mb-6">{selectedProduct.name}</h3>
 
-                {(selectedProduct.amazonUrl || selectedProduct.rakutenUrl) && (
-                  <div className="flex gap-3 mb-8">
-                    {selectedProduct.amazonUrl && <a href={selectedProduct.amazonUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#FFFFFF' }} className="flex-1 bg-slate-800 text-sm font-black px-4 py-3 rounded flex justify-center items-center gap-2 hover:bg-slate-700 transition shadow-md"><ShoppingCart size={16} /> Amazonで確認</a>}
-                    {selectedProduct.rakutenUrl && <a href={selectedProduct.rakutenUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#FFFFFF' }} className="flex-1 bg-[#BF0000] text-sm font-black px-4 py-3 rounded flex justify-center items-center gap-2 hover:bg-[#990000] transition shadow-md"><ShoppingCart size={16} /> 楽天で確認</a>}
+                  {selectedProduct.imageUrl && (
+                    <div className="w-full h-48 mb-6 bg-white border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden shadow-sm">
+                      <img src={selectedProduct.imageUrl} alt={selectedProduct.name} className="object-contain w-full h-full p-4 mix-blend-multiply" />
+                    </div>
+                  )}
+                  
+                  <h2 className="text-3xl font-bold mb-1 text-mkt-text-main">{selectedProduct.brand}</h2>
+                  <h3 className="text-mkt-text-sub font-bold text-lg mb-6">{selectedProduct.name}</h3>
+
+                  {(selectedProduct.amazonUrl || selectedProduct.rakutenUrl) && (
+                    <div className="flex gap-3 mb-8">
+                      {selectedProduct.amazonUrl && <a href={selectedProduct.amazonUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#FFFFFF' }} className="flex-1 bg-slate-800 text-sm font-black px-4 py-3 rounded flex justify-center items-center gap-2 hover:bg-slate-700 transition shadow-md"><ShoppingCart size={16} /> Amazonで確認</a>}
+                      {selectedProduct.rakutenUrl && <a href={selectedProduct.rakutenUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#FFFFFF' }} className="flex-1 bg-[#BF0000] text-sm font-black px-4 py-3 rounded flex justify-center items-center gap-2 hover:bg-[#990000] transition shadow-md"><ShoppingCart size={16} /> 楽天で確認</a>}
+                    </div>
+                  )}
+                  
+                  <h4 className="text-sm font-black text-mkt-text-sub tracking-widest border-b border-mkt-border pb-2 mb-4 mt-8">ハードウェア仕様</h4>
+                  <div className="space-y-4 mb-8">
+                    <div><span className="text-xs text-slate-500 font-bold block mb-1">搭載テクノロジー</span><p className="text-sm font-bold text-mkt-text-main">{selectedProduct.tech}</p></div>
+                    <div><span className="text-xs text-slate-500 font-bold block mb-1">防水規格</span><p className="text-sm font-bold text-mkt-text-main">{selectedProduct.waterproof}</p></div>
+                    <div><span className="text-xs text-slate-500 font-bold block mb-1">ピン仕様</span><p className="text-sm font-bold text-mkt-text-main leading-relaxed">{selectedProduct.pins}</p></div>
                   </div>
-                )}
-                
-                <h4 className="text-sm font-black text-mkt-text-sub tracking-widest border-b border-mkt-border pb-2 mb-4 mt-8">ハードウェア仕様</h4>
-                <div className="space-y-4 mb-8">
-                  <div><span className="text-xs text-slate-500 font-bold block mb-1">搭載テクノロジー</span><p className="text-sm font-bold text-mkt-text-main">{selectedProduct.tech}</p></div>
-                  <div><span className="text-xs text-slate-500 font-bold block mb-1">防水規格</span><p className="text-sm font-bold text-mkt-text-main">{selectedProduct.waterproof}</p></div>
-                  <div><span className="text-xs text-slate-500 font-bold block mb-1">ピン仕様</span><p className="text-sm font-bold text-mkt-text-main leading-relaxed">{selectedProduct.pins}</p></div>
+
+                  <h4 className="text-sm font-bold text-mkt-text-sub tracking-widest border-b border-mkt-border pb-2 mb-4">公式設定の訴求内容</h4>
+                  <div className="space-y-5">
+                    <div><span className="text-xs text-slate-500 font-bold block mb-1">対象顧客</span><p className="text-sm font-bold text-mkt-text-main">{selectedProduct.claims?.target}</p></div>
+                    <div><span className="text-xs text-slate-500 font-bold block mb-1">訴求事項</span><p className="text-sm font-bold text-mkt-text-main">{selectedProduct.claims?.problem}</p></div>
+                    <div><span className="text-xs text-slate-500 font-bold block mb-1">最大の強み</span><p className="text-sm font-bold text-mkt-text-main">{selectedProduct.claims?.usp}</p></div>
+                    <div><span className="text-xs text-slate-500 font-bold block mb-1">痛みのなさの主張</span><p className="text-sm font-bold text-mkt-text-main">{selectedProduct.claims?.pain}</p></div>
+                    <div><span className="text-xs text-slate-500 font-bold block mb-1">手軽さの主張</span><p className="text-sm font-bold text-mkt-text-main">{selectedProduct.claims?.ease}</p></div>
+                  </div>
+                  
+                  <div className="mb-8 mt-8 p-5 bg-white border-l-4 border-mkt-asagi border-y border-r border-slate-200 rounded-r shadow-sm">
+                    <h4 className="text-xs text-mkt-asagi font-bold tracking-widest mb-2 flex items-center gap-2"><Quote size={14}/> 公式広告文案</h4>
+                    <p className="text-lg font-serif italic text-mkt-text-main font-bold leading-relaxed">"{selectedProduct.claims?.copy}"</p>
+                  </div>
                 </div>
 
-                <h4 className="text-sm font-bold text-mkt-text-sub tracking-widest border-b border-mkt-border pb-2 mb-4">公式設定の訴求内容</h4>
-                <div className="space-y-5">
-                  <div><span className="text-xs text-slate-500 font-bold block mb-1">対象顧客</span><p className="text-sm font-bold text-mkt-text-main">{selectedProduct.claims?.target}</p></div>
-                  <div><span className="text-xs text-slate-500 font-bold block mb-1">訴求事項</span><p className="text-sm font-bold text-mkt-text-main">{selectedProduct.claims?.problem}</p></div>
-                  <div><span className="text-xs text-slate-500 font-bold block mb-1">最大の強み</span><p className="text-sm font-bold text-mkt-text-main">{selectedProduct.claims?.usp}</p></div>
-                  <div><span className="text-xs text-slate-500 font-bold block mb-1">痛みのなさの主張</span><p className="text-sm font-bold text-mkt-text-main">{selectedProduct.claims?.pain}</p></div>
-                  <div><span className="text-xs text-slate-500 font-bold block mb-1">手軽さの主張</span><p className="text-sm font-bold text-mkt-text-main">{selectedProduct.claims?.ease}</p></div>
-                </div>
-                
-                <div className="mb-8 mt-8 p-5 bg-white border-l-4 border-mkt-asagi border-y border-r border-slate-200 rounded-r shadow-sm">
-                  <h4 className="text-xs text-mkt-asagi font-bold tracking-widest mb-2 flex items-center gap-2"><Quote size={14}/> 公式広告文案</h4>
-                  <p className="text-lg font-serif italic text-mkt-text-main font-bold leading-relaxed">"{selectedProduct.claims?.copy}"</p>
+                {/* HUMINT Notes Section */}
+                <div className="mb-4 mt-8 p-5 bg-slate-900 text-slate-100 border-l-4 border-yellow-500 border-y border-r border-slate-800 rounded-r shadow-lg">
+                  <h4 className="text-xs text-yellow-400 font-black tracking-widest mb-3 flex items-center gap-2">
+                    <Brain size={14} /> 現場入手・秘匿情報 (HUMINT_Notes)
+                  </h4>
+                  
+                  {localNotes.length === 0 ? (
+                    <p className="text-xs text-slate-400 italic mb-4 font-bold">現在、この製品に関する秘匿情報は登録されていません。</p>
+                  ) : (
+                    <div className="space-y-3 mb-4 max-h-48 overflow-y-auto pr-1">
+                      {localNotes.map((n, i) => (
+                        <div key={i} className="bg-slate-800/80 p-2.5 rounded border border-slate-700 text-xs">
+                          <div className="flex justify-between items-center border-b border-slate-700 pb-1 mb-1.5 text-[10px] font-bold text-slate-400">
+                            <span>{n.author} [{n.category}]</span>
+                            <span className="text-slate-500">{n.date}</span>
+                          </div>
+                          <p className="font-bold text-slate-200 leading-relaxed whitespace-pre-wrap">{n.note}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="border-t border-slate-700 pt-3 mt-3">
+                    <span className="text-[10px] text-slate-400 font-bold block mb-2">⚡ 独自の重要情報をその場で追記</span>
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                      <input 
+                        type="text" placeholder="投稿者 (例: 渡辺)" value={noteAuthor} onChange={(e) => setNoteAuthor(e.target.value)}
+                        className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs font-bold text-white focus:border-yellow-500 outline-none"
+                      />
+                      <select 
+                        value={noteCategory} onChange={(e) => setNoteCategory(e.target.value)}
+                        className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs font-bold text-white focus:border-yellow-500 outline-none cursor-pointer"
+                      >
+                        <option value="商談・メーカー情報">商談・メーカー情報</option>
+                        <option value="市場・競合調査">市場・競合調査</option>
+                        <option value="製造・スペック裏話">製造・スペック裏話</option>
+                        <option value="その他重要情報">その他重要情報</option>
+                      </select>
+                    </div>
+                    <textarea 
+                      placeholder="公にされていない独自の重要情報を入力..." value={noteText} onChange={(e) => setNoteText(e.target.value)} rows={2}
+                      className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-xs font-bold text-white focus:border-yellow-500 outline-none resize-none mb-2"
+                    />
+                    <button onClick={handleSaveNote} disabled={isSavingNote} className="w-full bg-yellow-600 hover:bg-yellow-500 text-slate-950 font-black py-1.5 rounded text-xs transition-colors shadow flex justify-center items-center gap-1 disabled:opacity-50">
+                      {isSavingNote ? <Loader2 size={12} className="animate-spin" /> : "🛡️ 秘匿情報を保存"}
+                    </button>
+                  </div>
+                  
+                  <button onClick={() => setPendingProduct(selectedProduct)} className="mt-4 w-full bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 font-bold py-2 rounded text-xs transition-colors flex justify-center items-center gap-2">
+                    <Brain size={14} /> 新しい極秘情報を含めてAI再分析を実行
+                  </button>
                 </div>
               </div>
 
