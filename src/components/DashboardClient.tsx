@@ -456,7 +456,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
 
                 <div className="mt-8 mb-4 p-5 bg-white border-l-4 border-mkt-makoto border-y border-r border-slate-200 rounded shadow-sm">
                   <h4 className="text-sm text-mkt-makoto font-black tracking-widest mb-3 flex items-center gap-2">
-                    <Brain size={16} /> 現場入手・極秘メモ
+                    追加情報・メモ
                   </h4>
                   
                   {localNotes.length === 0 ? (
@@ -476,9 +476,9 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   )}
 
                   <div className="border-t border-slate-200 pt-4 mt-2">
-                    <span className="text-[10px] text-mkt-asagi font-black block mb-2 tracking-wider">⚡ 新しい極秘情報を追記する</span>
+                    <span className="text-[10px] text-mkt-asagi font-black block mb-2 tracking-wider">新しい情報を追記する</span>
                     <div className="grid grid-cols-2 gap-3 mb-3">
-                      <input type="text" placeholder="投稿者 (例: 渡辺)" value={noteAuthor} onChange={(e) => setNoteAuthor(e.target.value)} className={inputClass} />
+                      <input type="text" placeholder="投稿者 (例: 山田)" value={noteAuthor} onChange={(e) => setNoteAuthor(e.target.value)} className={inputClass} />
                       <select value={noteCategory} onChange={(e) => setNoteCategory(e.target.value)} className={`${inputClass} cursor-pointer`}>
                         <option value="商談・メーカー情報">商談・メーカー情報</option>
                         <option value="市場・競合調査">市場・競合調査</option>
