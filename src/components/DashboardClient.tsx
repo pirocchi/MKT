@@ -55,8 +55,11 @@ export default function DashboardClient({ initialData }: { initialData: Competit
   };
 
   const handleOpenDetail = (item: Competitor) => {
-    setSelectedProduct(item);
-    setEditedProduct(JSON.parse(JSON.stringify(item))); 
+    // 👑 修正の核心：引数のitemではなく、常に最新の products ステートからデータを引く！
+    const currentProduct = products.find(p => p.id === item.id) || item;
+
+    setSelectedProduct(currentProduct);
+    setEditedProduct(JSON.parse(JSON.stringify(currentProduct))); 
     setAnalyzedData(null);
     setErrorMsg("");
     setVisibleReviewCount(50);
@@ -64,7 +67,8 @@ export default function DashboardClient({ initialData }: { initialData: Competit
     setFilterPeriod('ALL');
     setFilterRating('ALL');
     setSortOrder('DATE_DESC');
-    setLocalNotes(item.rawHumint ? JSON.parse(item.rawHumint) : []);
+    // 👑 修正の核心：最新の製品データからメモをロードする！
+    setLocalNotes(currentProduct.rawHumint ? JSON.parse(currentProduct.rawHumint) : []);
     setNoteText("");
   };
 
@@ -534,7 +538,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                     <div className="space-y-3 mb-4 max-h-48 overflow-y-auto pr-2">
                       {localNotes.map((n, i) => (
                         <div key={i} className="bg-slate-50 p-3 rounded border border-slate-200 text-xs shadow-sm relative group">
-                          {/* 👑 修正：pr-8を追加してゴミ箱と日時が重ならないように完全に保護！ */}
                           <div className="flex justify-between items-center border-b border-slate-200 pb-1 mb-2 text-[10px] font-black text-slate-500 pr-8">
                             <span>{n.author} [{n.category}]</span>
                             <span>{n.date}</span>
@@ -556,7 +559,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   <div className="border-t border-slate-200 pt-4 mt-2">
                     <span className="text-[10px] text-mkt-asagi font-black block mb-2 tracking-wider">新しい情報を追記する</span>
                     <div className="grid grid-cols-2 gap-3 mb-3">
-                      <input type="text" placeholder="投稿者 (例: 渡辺)" value={noteAuthor} onChange={(e) => setNoteAuthor(e.target.value)} className={inputClass} />
+                      <input type="text" placeholder="投稿者 (例: 山田)" value={noteAuthor} onChange={(e) => setNoteAuthor(e.target.value)} className={inputClass} />
                       <select value={noteCategory} onChange={(e) => setNoteCategory(e.target.value)} className={`${inputClass} cursor-pointer`}>
                         <option value="商談・メーカー情報">商談・メーカー情報</option>
                         <option value="市場・競合調査">市場・競合調査</option>
