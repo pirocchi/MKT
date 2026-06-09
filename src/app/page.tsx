@@ -1,8 +1,10 @@
+// src/app/page.tsx
 import { getCompetitorData } from '../lib/sheets';
 import DashboardClient from '../components/DashboardClient';
 
-// 60秒ごとの自動データ同期
-export const revalidate = 60; 
+// 💥【究極リアルタイム化】60秒キャッシュを完全撤廃！！！
+// ページを開く・リロードしたその瞬間に、必ず最新のスプレッドシートを0秒で直接召喚するSSRモードへ強制変更！！！
+export const dynamic = 'force-dynamic'; 
 
 export default async function Dashboard() {
   // サーバー側でスプレッドシートからデータを抽出
