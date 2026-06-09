@@ -1,5 +1,8 @@
+// src/app/api/save-note/route.ts
 import { NextResponse } from 'next/server';
 import { appendNoteToSheet } from '@/lib/sheets';
+// 👑 追加
+import { revalidatePath } from 'next/cache';
 
 export async function POST(request: Request) {
   try {
@@ -9,7 +12,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "MKT-IDとメモ内容は必須です" }, { status: 400 });
     }
 
-    // 日本時間のタイムスタンプを生成して刻印！
     const timestamp = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
     
     await appendNoteToSheet(mktId, {
@@ -18,6 +20,9 @@ export async function POST(request: Request) {
       author: author || "匿名",
       timestamp
     });
+
+    // 💥 キャッシュ強制破棄！
+    revalidatePath('/');
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
