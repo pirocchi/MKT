@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Activity, Eye, X, Loader2, Target, Crosshair, Quote, Image as ImageIcon, ShoppingCart, CheckSquare, Square, FileText, Zap, Brain, Cpu, MessageCircle, BarChart3, Calendar, ArrowUpDown, Star, LayoutGrid, List, Save } from 'lucide-react';
+import { Activity, Eye, X, Loader2, Target, Crosshair, Quote, Image as ImageIcon, ShoppingCart, CheckSquare, Square, FileText, Zap, Brain, Cpu, MessageCircle, BarChart3, Calendar, ArrowUpDown, Star, LayoutGrid, List, Save, Trash2 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 type Competitor = {
@@ -14,7 +14,6 @@ type SentimentData = { sentiments: { name: string; value: number; color: string 
 type ProductPlan = { conceptName: string; targetPrice: string; coreFeatures: string[]; differentiation: string; mainCopy: string; };
 
 export default function DashboardClient({ initialData }: { initialData: Competitor[] }) {
-  // 👑 新設：画面全体のデータをリアルタイム管理する究極のローカルステート！
   const [products, setProducts] = useState<Competitor[]>(initialData);
 
   const [selectedProduct, setSelectedProduct] = useState<Competitor | null>(null);
@@ -45,11 +44,11 @@ export default function DashboardClient({ initialData }: { initialData: Competit
   const [noteText, setNoteText] = useState("");
   const [isSavingNote, setIsSavingNote] = useState(false);
   const [isUpdatingProduct, setIsUpdatingProduct] = useState(false);
+  const [isDeletingNote, setIsDeletingNote] = useState(false); // 👑 メモ削除中のローディングステート
 
   const inputClass = "w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm font-bold text-slate-800 focus:border-mkt-asagi outline-none transition-colors shadow-sm";
   const labelClass = "text-xs font-black text-slate-500 mb-1 block tracking-wider";
 
-  // 👑 メモの件数を安全にカウントするレーダー関数
   const getNotesCount = (rawHumint?: string) => {
     if (!rawHumint) return 0;
     try { return JSON.parse(rawHumint).length; } catch { return 0; }
@@ -112,16 +111,20 @@ export default function DashboardClient({ initialData }: { initialData: Competit
     if (!editedProduct) return;
     setIsUpdatingProduct(true);
     try {
+      // 現在のローカルメモの最新状態を editedProduct に反映させる
+      const currentHumintStr = localNotes.length > 0 ? JSON.stringify(localNotes) : "";
+      const payload = { ...editedProduct, rawHumint: currentHumintStr };
+
       const res = await fetch('/api/update-product', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editedProduct)
+        body: JSON.stringify(payload)
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "更新に失敗しました");
       
-      // 👑 編集した製品情報を画面のステートに完全同期！
-      setProducts(prev => prev.map(p => p.id === editedProduct.id ? editedProduct : p));
+      setProducts(prev => prev.map(p => p.id === payload.id ? payload : p));
+      setEditedProduct(payload); // ステート更新
       
       alert("✅ データベースの製品情報を完璧に上書き更新しました！");
     } catch (err: any) {
@@ -135,7 +138,8 @@ export default function DashboardClient({ initialData }: { initialData: Competit
     if (!editedProduct || !noteText.trim()) return;
     setIsSavingNote(true);
     try {
-      const res = await fetch('/api/save-note', {
+      // 1. 古い HUMINT_Notes への追記（履歴用）
+      await fetch('/api/save-note', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mktId: editedProduct.id,
@@ -144,9 +148,8 @@ export default function DashboardClient({ initialData }: { initialData: Competit
           author: noteAuthor || "匿名ユーザー"
         })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "保存に失敗しました");
       
+      // 2. 新しいメモを作成
       const newNote = {
         date: new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
         author: noteAuthor || "匿名ユーザー",
@@ -154,20 +157,64 @@ export default function DashboardClient({ initialData }: { initialData: Competit
         note: noteText
       };
       
-      // 👑 ここでローカルのメモ一覧、編集中のデータ、そして大元の製品一覧のすべてを同時更新！
+      // 3. ローカルステートを更新
       const updatedNotes = [...localNotes, newNote];
       setLocalNotes(updatedNotes);
       
       const updatedHumintStr = JSON.stringify(updatedNotes);
-      setEditedProduct(prev => prev ? { ...prev, rawHumint: updatedHumintStr } : null);
-      setProducts(prev => prev.map(p => p.id === editedProduct.id ? { ...p, rawHumint: updatedHumintStr } : p));
+      const updatedProduct = { ...editedProduct, rawHumint: updatedHumintStr };
       
+      setEditedProduct(updatedProduct);
+      setProducts(prev => prev.map(p => p.id === editedProduct.id ? updatedProduct : p));
+      
+      // 4. MKT_DB を完全上書きして同期！
+      await fetch('/api/update-product', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedProduct)
+      });
+
       setNoteText("");
       alert("✅ 追加情報・メモを保存しました！");
     } catch (err: any) {
       alert(`⚠️ 書き込み失敗: ${err.message}`);
     } finally {
       setIsSavingNote(false);
+    }
+  };
+
+  // 👑 新装：メモの削除処理（対象を消してMKT_DBを上書き！）
+  const handleDeleteNote = async (indexToDelete: number) => {
+    if (!editedProduct) return;
+    if (!window.confirm("このメモを削除しますか？\n※削除後は元に戻せません。")) return;
+
+    setIsDeletingNote(true);
+    try {
+      // 1. ローカルから対象のメモを除外
+      const updatedNotes = localNotes.filter((_, index) => index !== indexToDelete);
+      
+      // 2. 文字列化
+      const updatedHumintStr = updatedNotes.length > 0 ? JSON.stringify(updatedNotes) : "";
+      
+      // 3. ステートの更新
+      setLocalNotes(updatedNotes);
+      const updatedProduct = { ...editedProduct, rawHumint: updatedHumintStr };
+      setEditedProduct(updatedProduct);
+      setProducts(prev => prev.map(p => p.id === editedProduct.id ? updatedProduct : p));
+
+      // 4. MKT_DB を完全上書きして削除を確定！
+      const res = await fetch('/api/update-product', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedProduct)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "削除の反映に失敗しました");
+
+    } catch (err: any) {
+      alert(`⚠️ メモ削除失敗: ${err.message}`);
+    } finally {
+      setIsDeletingNote(false);
     }
   };
 
@@ -290,7 +337,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {products.map((item, index) => {
             const isSelected = selectedForPlan.some(p => p.id === item.id);
-            const noteCount = getNotesCount(item.rawHumint); // 👑 メモの件数を取得！
+            const noteCount = getNotesCount(item.rawHumint); 
             
             return (
               <div key={item.id || index} className={`bg-mkt-surface border-2 rounded-lg p-6 relative overflow-hidden group transition-all duration-300 flex flex-col shadow-sm ${isSelected ? 'border-mkt-makoto bg-mkt-makoto/5' : 'border-mkt-border hover:border-mkt-asagi'}`}>
@@ -310,7 +357,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex gap-2">
                     <span className="text-xs font-bold text-white bg-mkt-asagi px-2 py-1 rounded">{item.classification}</span>
-                    {/* 👑 メモが存在する場合、カード一覧にバッジを表示！ */}
                     {noteCount > 0 && (
                       <span className="text-[10px] bg-yellow-100 text-yellow-700 border border-yellow-300 px-2 py-1 rounded font-black tracking-wider flex items-center gap-1">
                         📝 メモ {noteCount}件
@@ -362,7 +408,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
             <tbody>
               {products.map((item, index) => {
                 const isSelected = selectedForPlan.some(p => p.id === item.id);
-                const noteCount = getNotesCount(item.rawHumint); // 👑 メモ件数
+                const noteCount = getNotesCount(item.rawHumint); 
 
                 return (
                   <tr key={item.id || index} className={`border-b border-slate-200 hover:bg-slate-50 transition-colors ${isSelected ? 'bg-mkt-makoto/5' : ''}`}>
@@ -379,7 +425,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                     <td className="p-2 md:p-4 align-middle">
                       <div className="font-black text-mkt-text-main text-sm mb-1">{item.brand}</div>
                       <div className="text-xs font-bold text-mkt-text-sub line-clamp-2">{item.name}</div>
-                      {/* 👑 リスト表示用：商品名の下にメモバッジを表示！ */}
                       {noteCount > 0 && (
                         <div className="mt-1 inline-block">
                           <span className="text-[10px] bg-yellow-100 text-yellow-700 border border-yellow-300 px-1.5 py-0.5 rounded font-black tracking-wider flex items-center gap-1">
@@ -499,12 +544,21 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   ) : (
                     <div className="space-y-3 mb-4 max-h-48 overflow-y-auto pr-2">
                       {localNotes.map((n, i) => (
-                        <div key={i} className="bg-slate-50 p-3 rounded border border-slate-200 text-xs shadow-sm">
+                        <div key={i} className="bg-slate-50 p-3 rounded border border-slate-200 text-xs shadow-sm relative group">
                           <div className="flex justify-between items-center border-b border-slate-200 pb-1 mb-2 text-[10px] font-black text-slate-500">
                             <span>{n.author} [{n.category}]</span>
                             <span>{n.date}</span>
                           </div>
-                          <p className="font-bold text-slate-800 leading-relaxed whitespace-pre-wrap">{n.note}</p>
+                          <p className="font-bold text-slate-800 leading-relaxed whitespace-pre-wrap pr-8">{n.note}</p>
+                          {/* 👑 追加：メモを削除するゴミ箱ボタン！ */}
+                          <button 
+                            onClick={() => handleDeleteNote(i)}
+                            disabled={isDeletingNote}
+                            className="absolute top-2 right-2 text-slate-300 hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"
+                            title="このメモを削除"
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </div>
                       ))}
                     </div>
