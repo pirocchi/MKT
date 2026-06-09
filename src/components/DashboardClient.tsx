@@ -44,7 +44,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
   const [noteText, setNoteText] = useState("");
   const [isSavingNote, setIsSavingNote] = useState(false);
   const [isUpdatingProduct, setIsUpdatingProduct] = useState(false);
-  const [isDeletingNote, setIsDeletingNote] = useState(false); // 👑 メモ削除中のローディングステート
+  const [isDeletingNote, setIsDeletingNote] = useState(false); 
 
   const inputClass = "w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm font-bold text-slate-800 focus:border-mkt-asagi outline-none transition-colors shadow-sm";
   const labelClass = "text-xs font-black text-slate-500 mb-1 block tracking-wider";
@@ -111,7 +111,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
     if (!editedProduct) return;
     setIsUpdatingProduct(true);
     try {
-      // 現在のローカルメモの最新状態を editedProduct に反映させる
       const currentHumintStr = localNotes.length > 0 ? JSON.stringify(localNotes) : "";
       const payload = { ...editedProduct, rawHumint: currentHumintStr };
 
@@ -124,7 +123,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
       if (!res.ok) throw new Error(data.error || "更新に失敗しました");
       
       setProducts(prev => prev.map(p => p.id === payload.id ? payload : p));
-      setEditedProduct(payload); // ステート更新
+      setEditedProduct(payload); 
       
       alert("✅ データベースの製品情報を上書き更新しました。フロントエンドの同期には少し時間がかかる場合があります。");
     } catch (err: any) {
@@ -138,7 +137,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
     if (!editedProduct || !noteText.trim()) return;
     setIsSavingNote(true);
     try {
-      // 1. 古い HUMINT_Notes への追記（履歴用）
       await fetch('/api/save-note', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -149,7 +147,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
         })
       });
       
-      // 2. 新しいメモを作成
       const newNote = {
         date: new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
         author: noteAuthor || "匿名ユーザー",
@@ -157,7 +154,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
         note: noteText
       };
       
-      // 3. ローカルステートを更新
       const updatedNotes = [...localNotes, newNote];
       setLocalNotes(updatedNotes);
       
@@ -167,7 +163,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
       setEditedProduct(updatedProduct);
       setProducts(prev => prev.map(p => p.id === editedProduct.id ? updatedProduct : p));
       
-      // 4. MKT_DB を完全上書きして同期！
       await fetch('/api/update-product', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -175,7 +170,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
       });
 
       setNoteText("");
-      alert("✅ 追加情報・メモを保存しました！");
+      alert("✅ 追加情報・メモを保存しました！フロントエンドの同期には少し時間がかかる場合があります。");
     } catch (err: any) {
       alert(`⚠️ 書き込み失敗: ${err.message}`);
     } finally {
@@ -183,26 +178,20 @@ export default function DashboardClient({ initialData }: { initialData: Competit
     }
   };
 
-  // 👑 新装：メモの削除処理（対象を消してMKT_DBを上書き！）
   const handleDeleteNote = async (indexToDelete: number) => {
     if (!editedProduct) return;
     if (!window.confirm("このメモを削除しますか？\n※削除後は元に戻せません。")) return;
 
     setIsDeletingNote(true);
     try {
-      // 1. ローカルから対象のメモを除外
       const updatedNotes = localNotes.filter((_, index) => index !== indexToDelete);
-      
-      // 2. 文字列化
       const updatedHumintStr = updatedNotes.length > 0 ? JSON.stringify(updatedNotes) : "";
       
-      // 3. ステートの更新
       setLocalNotes(updatedNotes);
       const updatedProduct = { ...editedProduct, rawHumint: updatedHumintStr };
       setEditedProduct(updatedProduct);
       setProducts(prev => prev.map(p => p.id === editedProduct.id ? updatedProduct : p));
 
-      // 4. MKT_DB を完全上書きして削除を確定！
       const res = await fetch('/api/update-product', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -536,7 +525,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
 
                 <div className="mt-8 mb-4 p-5 bg-white border-l-4 border-mkt-makoto border-y border-r border-slate-200 rounded shadow-sm">
                   <h4 className="text-sm text-mkt-makoto font-black tracking-widest mb-3 flex items-center gap-2">
-                    <Brain size={16} /> 追加情報・メモ
+                    追加情報・メモ
                   </h4>
                   
                   {localNotes.length === 0 ? (
@@ -545,12 +534,12 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                     <div className="space-y-3 mb-4 max-h-48 overflow-y-auto pr-2">
                       {localNotes.map((n, i) => (
                         <div key={i} className="bg-slate-50 p-3 rounded border border-slate-200 text-xs shadow-sm relative group">
-                          <div className="flex justify-between items-center border-b border-slate-200 pb-1 mb-2 text-[10px] font-black text-slate-500">
+                          {/* 👑 修正：pr-8を追加してゴミ箱と日時が重ならないように完全に保護！ */}
+                          <div className="flex justify-between items-center border-b border-slate-200 pb-1 mb-2 text-[10px] font-black text-slate-500 pr-8">
                             <span>{n.author} [{n.category}]</span>
                             <span>{n.date}</span>
                           </div>
-                          <p className="font-bold text-slate-800 leading-relaxed whitespace-pre-wrap pr-8">{n.note}</p>
-                          {/* 👑 追加：メモを削除するゴミ箱ボタン！ */}
+                          <p className="font-bold text-slate-800 leading-relaxed whitespace-pre-wrap">{n.note}</p>
                           <button 
                             onClick={() => handleDeleteNote(i)}
                             disabled={isDeletingNote}
@@ -577,7 +566,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                     </div>
                     <textarea placeholder="商談で得た裏話や未公開情報などを入力..." value={noteText} onChange={(e) => setNoteText(e.target.value)} rows={3} className={`${inputClass} resize-none mb-3`} />
                     <button onClick={handleSaveNote} disabled={isSavingNote} className="w-full bg-mkt-surface border-2 border-mkt-makoto text-mkt-makoto hover:bg-mkt-makoto hover:text-white font-black py-2.5 rounded text-sm transition-colors shadow-sm flex justify-center items-center gap-2 disabled:opacity-50">
-                      {isSavingNote ? <Loader2 size={16} className="animate-spin" /> : "🛡️ 追加情報・メモを保存"}
+                      {isSavingNote ? <Loader2 size={16} className="animate-spin" /> : "追加情報・メモを保存"}
                     </button>
                   </div>
                 </div>
@@ -592,7 +581,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   
                   {!isAnalyzing && !analyzedData && (
                     <button onClick={() => setPendingProduct(editedProduct)} className="bg-mkt-surface border-2 border-mkt-makoto text-mkt-makoto hover:bg-mkt-makoto hover:text-white font-bold py-2 px-4 rounded shadow-sm flex items-center gap-2 text-sm transition-colors animate-pulse hover:animate-none">
-                      <Brain size={16} /> AI分析を実行する
+                      AI分析を実行する
                     </button>
                   )}
                   {analyzedData && (
