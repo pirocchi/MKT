@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Activity, Eye, X, Loader2, Target, Crosshair, Quote, Image as ImageIcon, ShoppingCart, CheckSquare, Square, FileText, Zap, Brain, Cpu, MessageCircle, BarChart3, Calendar, ArrowUpDown, Star, LayoutGrid, List, Save, Trash2 } from 'lucide-react';
+import { Activity, Eye, X, Loader2, Target, Crosshair, Quote, Image as ImageIcon, ShoppingCart, CheckSquare, Square, FileText, Zap, Cpu, MessageCircle, BarChart3, Calendar, ArrowUpDown, Star, LayoutGrid, List, Trash2 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 type Competitor = {
@@ -361,7 +361,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
 
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex gap-2">
-                    {/* 👑 完全修正：明るいグレー背景にダークグレー文字＋枠線で絶対に見やすく！ */}
                     <span className="text-[10px] font-black bg-slate-200 text-slate-800 border border-slate-300 px-2 py-1 rounded tracking-widest shadow-sm">
                       {item.classification}
                     </span>
@@ -398,7 +397,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                 </div>
 
                 <button onClick={() => handleOpenDetail(item)} className="w-full bg-mkt-surface border-2 border-mkt-makoto text-mkt-makoto py-3 rounded hover:bg-mkt-makoto hover:text-white transition-colors font-black tracking-wider flex justify-center items-center gap-2 text-lg">
-                  <Target size={20} /> 詳細確認 ＆ 分析
+                  詳細確認 ＆ 分析
                 </button>
               </div>
             );
@@ -479,7 +478,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-xl w-full max-w-2xl overflow-hidden shadow-2xl border border-mkt-border">
             <div className="bg-mkt-surface p-6 flex justify-between items-center text-mkt-text-main border-b-4 border-mkt-makoto">
-              <h3 className="text-xl font-black flex items-center gap-3 tracking-widest"><span className="bg-mkt-asagi text-white p-2 rounded-md shadow-sm"><Brain size={20} /></span>分析方法の選択</h3>
+              <h3 className="text-xl font-black flex items-center gap-3 tracking-widest">分析方法の選択</h3>
               <button onClick={() => { setPendingProduct(null); setPendingPlan(false); }} className="text-slate-400 hover:text-mkt-makoto bg-slate-100 hover:bg-red-50 p-2 rounded-full transition-colors"><X size={24} /></button>
             </div>
             <div className="p-8 bg-slate-50">
@@ -509,8 +508,8 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                     <FileText className="text-mkt-asagi" /> 製品データの確認・編集
                   </h3>
                   <button onClick={handleUpdateProduct} disabled={isUpdatingProduct} className="bg-mkt-surface border-2 border-mkt-asagi text-mkt-asagi hover:bg-mkt-asagi hover:text-white font-black py-2 px-4 rounded shadow-sm flex items-center gap-2 text-sm transition-colors disabled:opacity-50">
-                    {isUpdatingProduct ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                    データベースを更新
+                    {isUpdatingProduct && <Loader2 size={16} className="animate-spin" />}
+                    製品データを更新
                   </button>
                 </div>
 
@@ -550,7 +549,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
 
                 <div className="mt-8 mb-4 p-5 bg-white border-l-4 border-mkt-makoto border-y border-r border-slate-200 rounded shadow-sm">
                   <h4 className="text-sm text-mkt-makoto font-black tracking-widest mb-3 flex items-center gap-2">
-                    <Brain size={16} /> 追加情報・メモ
+                    追加情報・メモ
                   </h4>
                   
                   {localNotes.length === 0 ? (
@@ -610,7 +609,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   )}
                   {analyzedData && (
                     <button onClick={() => setPendingProduct(editedProduct)} className="bg-mkt-surface border-2 border-mkt-makoto text-mkt-makoto hover:bg-mkt-makoto hover:text-white font-bold py-2 px-4 rounded shadow-sm flex items-center gap-2 text-xs transition-colors">
-                      <Brain size={14} /> 最新の情報で再分析
+                      最新の情報で再分析
                     </button>
                   )}
                 </div>
@@ -625,8 +624,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   <div className="flex-grow flex items-center justify-center text-mkt-makoto font-bold border border-mkt-makoto/50 p-4 rounded bg-mkt-makoto/5 m-4">{errorMsg}</div>
                 ) : !analyzedData ? (
                   <div className="flex-grow flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-300 rounded-lg m-4 p-8 text-center">
-                    <Brain size={64} className="mb-4 text-slate-300" />
-                    <h3 className="text-lg font-black text-slate-600 mb-2">分析スタンバイ完了</h3>
+                    <h3 className="text-lg font-black text-slate-600 mb-2">分析準備OK</h3>
                     <p className="text-sm font-bold leading-relaxed">左側のパネルで製品情報の確認・編集、および追加情報の入力を行ってください。<br/>準備が完了したら、右上の「AI分析を実行する」ボタンを押して分析を開始します。</p>
                   </div>
                 ) : (
