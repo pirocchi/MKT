@@ -60,6 +60,14 @@ export default function DashboardClient({ initialData }: { initialData: Competit
   const [isUpdatingProduct, setIsUpdatingProduct] = useState(false);
   const [isDeletingNote, setIsDeletingNote] = useState(false); 
 
+  // 👑 新設：新規製品追加モーダル用のステート群
+  const [isAddingProduct, setIsAddingProduct] = useState(false);
+  const [isSubmittingNewProduct, setIsSubmittingNewProduct] = useState(false);
+  const [newProduct, setNewProduct] = useState<Partial<Competitor>>({
+    id: "", classification: "電気バリブラシ", brand: "", name: "", price: 0, tech: "", waterproof: "", pins: "", imageUrl: "", amazonUrl: "", rakutenUrl: "",
+    claims: { target: "", problem: "", usp: "", pain: "", ease: "", copy: "" }
+  });
+
   const inputClass = "w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm font-bold text-slate-800 focus:border-mkt-asagi outline-none transition-colors shadow-sm";
   const labelClass = "text-xs font-black text-slate-500 mb-1 block tracking-wider";
 
@@ -223,6 +231,57 @@ export default function DashboardClient({ initialData }: { initialData: Competit
     }
   };
 
+  // 👑 新設：手動製品追加のSubmit処理
+  const handleAddProductSubmit = async () => {
+    if (!newProduct.id || !newProduct.brand || !newProduct.name) {
+      alert("⚠️ MKT-ID、ブランド名、商品名は必須入力項目です。");
+      return;
+    }
+    setIsSubmittingNewProduct(true);
+    try {
+      const res = await fetch('/api/add-product', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newProduct)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "製品の追加に失敗しました");
+
+      // 大元のローカルステートに完全同期！
+      const completeNewProduct: Competitor = {
+        id: newProduct.id,
+        classification: newProduct.classification || "電気バリブラシ",
+        brand: newProduct.brand,
+        name: newProduct.name,
+        price: Number(newProduct.price) || 0,
+        tech: newProduct.tech || "",
+        waterproof: newProduct.waterproof || "",
+        pins: newProduct.pins || "",
+        reviews: 0,
+        averageRating: "-",
+        scrapedDate: new Date().toLocaleDateString('ja-JP'),
+        imageUrl: newProduct.imageUrl || "",
+        amazonUrl: newProduct.amazonUrl || "",
+        rakutenUrl: newProduct.rakutenUrl || "",
+        claims: newProduct.claims as any,
+        rawReviews: "",
+        rawHumint: ""
+      };
+
+      setProducts(prev => [...prev, completeNewProduct]);
+      setIsAddingProduct(false);
+      setNewProduct({
+        id: "", classification: "電気バリブラシ", brand: "", name: "", price: 0, tech: "", waterproof: "", pins: "", imageUrl: "", amazonUrl: "", rakutenUrl: "",
+        claims: { target: "", problem: "", usp: "", pain: "", ease: "", copy: "" }
+      });
+      alert("✅ 新しい製品をデータベースに追加し、画面と完全同期しました！");
+    } catch (err: any) {
+      alert(`⚠️ 追加失敗: ${err.message}`);
+    } finally {
+      setIsSubmittingNewProduct(false);
+    }
+  };
+
   const togglePlanSelection = (item: Competitor) => {
     if (selectedForPlan.find(p => p.id === item.id)) {
       setSelectedForPlan(selectedForPlan.filter(p => p.id !== item.id));
@@ -315,10 +374,14 @@ export default function DashboardClient({ initialData }: { initialData: Competit
             <span className="text-mkt-makoto">MKT</span><span>競合分析画面</span>
           </h1>
           <p className="text-mkt-asagi text-xs md:text-sm mt-2 tracking-widest flex items-center gap-2 font-bold">
-            競合製品の市場評価と方針の比較
+            競合製品の市場評価 and 方針の比較
           </p>
         </div>
         <div className="flex gap-4 items-center">
+          {/* 👑 追加：新規競合製品を追加するための無駄のないボタン */}
+          <button onClick={() => setIsAddingProduct(true)} className="bg-mkt-surface border-2 border-mkt-asagi text-mkt-asagi hover:bg-mkt-asagi hover:text-white font-black py-2 px-4 rounded shadow-sm flex items-center gap-2 text-sm transition-colors">
+            競合製品を追加
+          </button>
           <div className="flex bg-slate-200/50 p-1 rounded-lg">
             <button onClick={() => handleSetViewMode('grid')} className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white shadow text-mkt-makoto' : 'text-slate-500 hover:text-mkt-makoto'}`} title="カード表示"><LayoutGrid size={20} /></button>
             <button onClick={() => handleSetViewMode('list')} className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow text-mkt-makoto' : 'text-slate-500 hover:text-mkt-makoto'}`} title="リスト表示"><List size={20} /></button>
@@ -625,7 +688,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                 ) : !analyzedData ? (
                   <div className="flex-grow flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-300 rounded-lg m-4 p-8 text-center">
                     <h3 className="text-lg font-black text-slate-600 mb-2">分析準備OK</h3>
-                    <p className="text-sm font-bold leading-relaxed">左側のパネルで製品情報の確認・編集、および追加情報の入力を行ってください。<br/>準備が完了したら、右上の「AI分析を実行する」ボタンを押して分析を開始します。</p>
+                    <p className="text-sm font-bold leading-relaxed">左側のパネルで製品情報の確認・編集、および追加情報の入力を行ってください。<br/>準備が完了したら、右上の「AI分析を実行する']ボタンを押して分析を開始します。</p>
                   </div>
                 ) : (
                   <div className="animate-in fade-in slide-in-from-right-8 duration-500 flex flex-col gap-8">
@@ -634,7 +697,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                       <div className="w-48 h-48 flex-shrink-0">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
-                            <Pie data={analyzedData.sentiments} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={5} dataKey="value" stroke="none">
+                            <Pie data={analyzedData.sentitudes} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={5} dataKey="value" stroke="none">
                               {analyzedData.sentiments.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}
                             </Pie>
                             <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#E2E8F0', color: '#0F172A', fontWeight: 'bold' }} itemStyle={{ color: '#0F172A', fontWeight: 'bold' }} />
@@ -693,7 +756,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   </div>
                 )}
 
-                {/* 以下、評価統計とレビュー一覧 */}
+                {/* 顧客評価一覧 */}
                 {!isAnalyzing && !errorMsg && reviewSummary && baseReviews.length > 0 && (
                   <div className="mt-12 pt-8 border-t-4 border-slate-100 animate-in fade-in duration-500">
                     <h4 className="font-bold tracking-widest text-mkt-text-main flex items-center gap-3 text-xl mb-6">
@@ -797,6 +860,78 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                     )}
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 👑 新設：競合製品の手動登録モーダル（拡張フォーム版） */}
+      {isAddingProduct && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-mkt-surface border border-mkt-border rounded-xl w-full max-w-[95vw] h-[95vh] flex flex-col relative overflow-hidden shadow-2xl">
+            <button onClick={() => setIsAddingProduct(false)} className="absolute top-4 right-4 text-mkt-text-sub hover:text-mkt-makoto transition-colors z-20 bg-slate-100 hover:bg-slate-200 p-2 rounded-full shadow-sm"><X size={28} /></button>
+            
+            <div className="p-6 border-b border-mkt-border bg-white flex justify-between items-center">
+              <h3 className="text-xl font-black text-mkt-text-main flex items-center gap-2">
+                <FileText className="text-mkt-asagi" /> 新規競合製品の登録
+              </h3>
+              <button onClick={handleAddProductSubmit} disabled={isSubmittingNewProduct} className="bg-mkt-surface border-2 border-mkt-asagi text-mkt-asagi hover:bg-mkt-asagi hover:text-white font-black py-2 px-4 rounded shadow-sm flex items-center gap-2 text-sm transition-colors disabled:opacity-50">
+                {isSubmittingNewProduct && <Loader2 size={16} className="animate-spin" />}
+                データベースに追加
+              </button>
+            </div>
+
+            <div className="flex-grow overflow-y-auto p-6 bg-slate-50 space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                {/* 左側：基本仕様フォーム */}
+                <div className="space-y-6">
+                  <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
+                    <h4 className="text-sm font-black text-slate-700 border-b border-slate-100 pb-2 mb-4">基本スペック</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div><label className={labelClass}>MKT-ID (必須 / 重複不可)</label><input type="text" placeholder="例: DBB-006" className={inputClass} value={newProduct.id} onChange={e => setNewProduct({...newProduct, id: e.target.value})} /></div>
+                      <div><label className={labelClass}>製品分類</label><input type="text" className={inputClass} value={newProduct.classification} onChange={e => setNewProduct({...newProduct, classification: e.target.value})} /></div>
+                      <div><label className={labelClass}>ブランド名 (必須)</label><input type="text" placeholder="例: A社" className={inputClass} value={newProduct.brand} onChange={e => setNewProduct({...newProduct, brand: e.target.value})} /></div>
+                      <div><label className={labelClass}>実売価格 (円)</label><input type="number" className={inputClass} value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: Number(e.target.value)})} /></div>
+                      <div className="md:col-span-2"><label className={labelClass}>商品名 (必須)</label><input type="text" placeholder="製品の正式名称" className={inputClass} value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} /></div>
+                      <div className="md:col-span-2"><label className={labelClass}>画像URL</label><input type="text" className={inputClass} value={newProduct.imageUrl} onChange={e => setNewProduct({...newProduct, imageUrl: e.target.value})} /></div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
+                    <h4 className="text-sm font-black text-slate-700 border-b border-slate-100 pb-2 mb-4">ハードウェア仕様</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div><label className={labelClass}>搭載テクノロジー</label><input type="text" placeholder="例: EMS / LED" className={inputClass} value={newProduct.tech} onChange={e => setNewProduct({...newProduct, tech: e.target.value})} /></div>
+                      <div><label className={labelClass}>防水規格</label><input type="text" placeholder="例: IPX5" className={inputClass} value={newProduct.waterproof} onChange={e => setNewProduct({...newProduct, waterproof: e.target.value})} /></div>
+                      <div className="md:col-span-2"><label className={labelClass}>ピン仕様</label><textarea className={`${inputClass} resize-none`} rows={2} placeholder="ピン本数や材質、柔軟性など" value={newProduct.pins} onChange={e => setNewProduct({...newProduct, pins: e.target.value})} /></div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
+                    <h4 className="text-sm font-black text-slate-700 border-b border-slate-100 pb-2 mb-4">ECリンク情報</h4>
+                    <div className="space-y-4">
+                      <div><label className={labelClass}>Amazon URL</label><input type="text" className={inputClass} value={newProduct.amazonUrl} onChange={e => setNewProduct({...newProduct, amazonUrl: e.target.value})} /></div>
+                      <div><label className={labelClass}>楽天市場 URL</label><input type="text" className={inputClass} value={newProduct.rakutenUrl} onChange={e => setNewProduct({...newProduct, rakutenUrl: e.target.value})} /></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 右側：公式の訴求内容（拡張テキストエリア） */}
+                <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm flex flex-col justify-between">
+                  <div>
+                    <h4 className="text-sm font-black text-slate-700 border-b border-slate-100 pb-2 mb-4">公式の訴求内容</h4>
+                    <div className="space-y-4">
+                      <div><label className={labelClass}>対象顧客</label><input type="text" placeholder="例: 頭皮の硬さや顔のたるみが気になる30〜50代" className={inputClass} value={newProduct.claims?.target} onChange={e => setNewProduct({...newProduct, claims: {...newProduct.claims!, target: e.target.value}})} /></div>
+                      <div><label className={labelClass}>訴求事項</label><textarea className={`${inputClass} resize-none`} rows={3} placeholder="どんな悩みを解決すると主張しているか" value={newProduct.claims?.problem} onChange={e => setNewProduct({...newProduct, claims: {...newProduct.claims!, problem: e.target.value}})} /></div>
+                      <div><label className={labelClass}>最大の強み(USP)</label><textarea className={`${inputClass} resize-none`} rows={3} placeholder="他社に対する圧倒的優位点" value={newProduct.claims?.usp} onChange={e => setNewProduct({...newProduct, claims: {...newProduct.claims!, usp: e.target.value}})} /></div>
+                      <div><label className={labelClass}>痛みのなさ</label><textarea className={`${inputClass} resize-none`} rows={3} placeholder="刺激レベルや痛みの少なさに関する訴求" value={newProduct.claims?.pain} onChange={e => setNewProduct({...newProduct, claims: {...newProduct.claims!, pain: e.target.value}})} /></div>
+                      <div><label className={labelClass}>手軽さ</label><textarea className={`${inputClass} resize-none`} rows={3} placeholder="お風呂での使用、コードレス、操作性など" value={newProduct.claims?.ease} onChange={e => setNewProduct({...newProduct, claims: {...newProduct.claims!, ease: e.target.value}})} /></div>
+                      <div><label className={labelClass}>公式広告文案</label><textarea className={`${inputClass} resize-none`} rows={3} placeholder="実際のLPや広告で使われているメインのコピー文案" value={newProduct.claims?.copy} onChange={e => setNewProduct({...newProduct, claims: {...newProduct.claims!, copy: e.target.value}})} /></div>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>

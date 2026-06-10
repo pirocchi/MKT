@@ -122,7 +122,56 @@ export async function appendNoteToSheet(mktId: string, { note, category, author,
   });
 }
 
-// 💥 ここが完全新規追加＆超絶強化されたデータベース同期メソッド！！！
+// 👑 新規追加：新商品をスプレッドシート（MKT_DB）の最後尾に1行追加するメソッド
+export async function appendProductToSheet(productData: any) {
+  const auth = getAuthClient();
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = process.env.SPREADSHEET_ID;
+
+  // MKT-IDの重複チェック
+  const idResponse = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: "MKT_DB!A:A",
+  });
+  const rows = idResponse.data.values || [];
+  const exists = rows.some(row => row[0] === productData.id);
+  if (exists) {
+    throw new Error(`MKT-ID「${productData.id}」は既にデータベースに存在します。`);
+  }
+
+  const values = [
+    [
+      productData.id,
+      productData.classification || "電気バリブラシ",
+      productData.brand || "",
+      productData.name || "",
+      productData.price || 0,
+      productData.tech || "",
+      productData.waterproof || "",
+      productData.pins || "",
+      0, // reviews（初期値0件）
+      productData.claims?.target || "",
+      productData.claims?.problem || "",
+      productData.claims?.usp || "",
+      productData.claims?.pain || "",
+      productData.claims?.ease || "",
+      productData.claims?.copy || "",
+      new Date().toLocaleDateString('ja-JP'), // scrapedDate（本日日付）
+      "-", // averageRating（初期評価なし）
+      productData.imageUrl || "",
+      productData.amazonUrl || "",
+      productData.rakutenUrl || ""
+    ]
+  ];
+
+  await sheets.spreadsheets.values.append({
+    spreadsheetId,
+    range: "MKT_DB!A:A",
+    valueInputOption: "USER_ENTERED",
+    requestBody: { values },
+  });
+}
+
 export async function updateProductInSheet(productData: any) {
   const auth = getAuthClient();
   const sheets = google.sheets({ version: "v4", auth });
@@ -188,7 +237,6 @@ export async function updateProductInSheet(productData: any) {
       }
     }
 
-    // シートから全メモを取得
     const humintResponse = await sheets.spreadsheets.values.get({
       spreadsheetId,
       range: "HUMINT_Notes!A:E",
@@ -199,13 +247,11 @@ export async function updateProductInSheet(productData: any) {
       ? humintRows[0] 
       : ["MKT-ID", "投稿日時", "投稿者", "カテゴリ", "メモ内容"];
 
-    // 他の製品のメモだけを残す（今回の製品の古いメモ＝消されたメモを含む履歴はすべて一旦リセット）
     const otherNotes = humintRows.filter((row, index) => {
-      if (index === 0 && row[0] === "MKT-ID") return false; // ヘッダー除外
+      if (index === 0 && row[0] === "MKT-ID") return false; 
       return row[0] !== productData.id;
     });
 
-    // 画面上で生き残っている「最新のメモ一覧」だけを再構築
     const newNotesRows = updatedNotes.map(n => [
       productData.id, 
       n.date, 
@@ -216,7 +262,6 @@ export async function updateProductInSheet(productData: any) {
 
     const finalRows = [header, ...otherNotes, ...newNotesRows];
 
-    // シートを一旦クリアして完全上書き！これでもうゾンビ復活は絶対に起きない！
     await sheets.spreadsheets.values.clear({
       spreadsheetId,
       range: "HUMINT_Notes!A:E",
