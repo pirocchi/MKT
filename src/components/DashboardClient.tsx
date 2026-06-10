@@ -41,6 +41,16 @@ export default function DashboardClient({ initialData }: { initialData: Competit
   const [sortOrder, setSortOrder] = useState<string>('DATE_DESC');
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  useEffect(() => {
+    const savedMode = localStorage.getItem('mkt-view-mode');
+    if (savedMode === 'list' || savedMode === 'grid') {
+      setViewMode(savedMode);
+    }
+  }, []);
+  const handleSetViewMode = (mode: 'grid' | 'list') => {
+    setViewMode(mode);
+    localStorage.setItem('mkt-view-mode', mode);
+  };
 
   const [localNotes, setLocalNotes] = useState<any[]>([]);
   const [noteAuthor, setNoteAuthor] = useState("");
@@ -310,8 +320,8 @@ export default function DashboardClient({ initialData }: { initialData: Competit
         </div>
         <div className="flex gap-4 items-center">
           <div className="flex bg-slate-200/50 p-1 rounded-lg">
-            <button onClick={() => setViewMode('grid')} className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white shadow text-mkt-makoto' : 'text-slate-500 hover:text-mkt-makoto'}`} title="カード表示"><LayoutGrid size={20} /></button>
-            <button onClick={() => setViewMode('list')} className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow text-mkt-makoto' : 'text-slate-500 hover:text-mkt-makoto'}`} title="リスト表示"><List size={20} /></button>
+            <button onClick={() => handleSetViewMode('grid')} className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white shadow text-mkt-makoto' : 'text-slate-500 hover:text-mkt-makoto'}`} title="カード表示"><LayoutGrid size={20} /></button>
+            <button onClick={() => handleSetViewMode('list')} className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow text-mkt-makoto' : 'text-slate-500 hover:text-mkt-makoto'}`} title="リスト表示"><List size={20} /></button>
           </div>
           <div className="hidden md:flex bg-mkt-surface border border-mkt-border px-4 py-2 rounded items-center gap-2 font-bold shadow-sm">
             <Activity size={16} className="text-green-500" /> AI 連携完了
@@ -351,7 +361,10 @@ export default function DashboardClient({ initialData }: { initialData: Competit
 
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex gap-2">
-                    <span className="text-xs font-bold text-white bg-mkt-asagi px-2 py-1 rounded">{item.classification}</span>
+                    {/* 👑 完全修正：明るいグレー背景にダークグレー文字＋枠線で絶対に見やすく！ */}
+                    <span className="text-[10px] font-black bg-slate-200 text-slate-800 border border-slate-300 px-2 py-1 rounded tracking-widest shadow-sm">
+                      {item.classification}
+                    </span>
                     {noteCount > 0 && (
                       <span className="text-[10px] bg-yellow-100 text-yellow-700 border border-yellow-300 px-2 py-1 rounded font-black tracking-wider flex items-center gap-1">
                         📝 メモ {noteCount}件
@@ -364,7 +377,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                 
                 <div className="flex flex-wrap gap-2 mb-4">
                   <span className="text-[10px] bg-mkt-asagi/10 text-mkt-asagi border border-mkt-asagi/30 px-2 py-1 rounded font-black tracking-wider">{item.tech}</span>
-                  <span className="text-[10px] bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded font-black tracking-wider">防水: {item.waterproof}</span>
+                  <span className="text-[10px] bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded font-black tracking-wider">{item.waterproof}</span>
                 </div>
 
                 <div className="space-y-5 mb-6 flex-grow">
@@ -372,6 +385,12 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                     <span className="text-mkt-text-sub font-bold">実売価格</span>
                     <span className="font-black text-3xl text-mkt-text-main tracking-tight">¥{item.price.toLocaleString()}</span>
                   </div>
+                  
+                  <div className="flex justify-between items-center border-b border-mkt-border pb-3">
+                    <span className="text-mkt-text-sub font-bold text-xs">平均評価: <span className="text-yellow-500 text-sm">★ {item.averageRating || "-"}</span></span>
+                    <span className="text-mkt-text-sub font-bold text-xs">レビュー: <span className="text-mkt-asagi text-sm">{item.reviews.toLocaleString()}</span> 件</span>
+                  </div>
+
                   <div className="bg-slate-50 p-3 rounded mt-2 border border-slate-200">
                     <span className="text-xs text-mkt-asagi font-black mb-1 block tracking-wider">公式広告文案:</span>
                     <p className="text-sm font-bold italic text-mkt-text-main truncate">"{item.claims?.copy || '未設定'}"</p>
@@ -379,7 +398,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                 </div>
 
                 <button onClick={() => handleOpenDetail(item)} className="w-full bg-mkt-surface border-2 border-mkt-makoto text-mkt-makoto py-3 rounded hover:bg-mkt-makoto hover:text-white transition-colors font-black tracking-wider flex justify-center items-center gap-2 text-lg">
-                  詳細確認 ＆ 分析
+                  <Target size={20} /> 詳細確認 ＆ 分析
                 </button>
               </div>
             );
@@ -460,7 +479,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-xl w-full max-w-2xl overflow-hidden shadow-2xl border border-mkt-border">
             <div className="bg-mkt-surface p-6 flex justify-between items-center text-mkt-text-main border-b-4 border-mkt-makoto">
-              <h3 className="text-xl font-black flex items-center gap-3 tracking-widest">分析方法の選択</h3>
+              <h3 className="text-xl font-black flex items-center gap-3 tracking-widest"><span className="bg-mkt-asagi text-white p-2 rounded-md shadow-sm"><Brain size={20} /></span>分析方法の選択</h3>
               <button onClick={() => { setPendingProduct(null); setPendingPlan(false); }} className="text-slate-400 hover:text-mkt-makoto bg-slate-100 hover:bg-red-50 p-2 rounded-full transition-colors"><X size={24} /></button>
             </div>
             <div className="p-8 bg-slate-50">
@@ -490,8 +509,8 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                     <FileText className="text-mkt-asagi" /> 製品データの確認・編集
                   </h3>
                   <button onClick={handleUpdateProduct} disabled={isUpdatingProduct} className="bg-mkt-surface border-2 border-mkt-asagi text-mkt-asagi hover:bg-mkt-asagi hover:text-white font-black py-2 px-4 rounded shadow-sm flex items-center gap-2 text-sm transition-colors disabled:opacity-50">
-                    {isUpdatingProduct && <Loader2 size={16} className="animate-spin" />}
-                    製品データを更新
+                    {isUpdatingProduct ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                    データベースを更新
                   </button>
                 </div>
 
@@ -531,7 +550,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
 
                 <div className="mt-8 mb-4 p-5 bg-white border-l-4 border-mkt-makoto border-y border-r border-slate-200 rounded shadow-sm">
                   <h4 className="text-sm text-mkt-makoto font-black tracking-widest mb-3 flex items-center gap-2">
-                    追加情報・メモ
+                    <Brain size={16} /> 追加情報・メモ
                   </h4>
                   
                   {localNotes.length === 0 ? (
@@ -591,7 +610,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   )}
                   {analyzedData && (
                     <button onClick={() => setPendingProduct(editedProduct)} className="bg-mkt-surface border-2 border-mkt-makoto text-mkt-makoto hover:bg-mkt-makoto hover:text-white font-bold py-2 px-4 rounded shadow-sm flex items-center gap-2 text-xs transition-colors">
-                      最新の情報で再分析
+                      <Brain size={14} /> 最新の情報で再分析
                     </button>
                   )}
                 </div>
@@ -606,7 +625,8 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   <div className="flex-grow flex items-center justify-center text-mkt-makoto font-bold border border-mkt-makoto/50 p-4 rounded bg-mkt-makoto/5 m-4">{errorMsg}</div>
                 ) : !analyzedData ? (
                   <div className="flex-grow flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-300 rounded-lg m-4 p-8 text-center">
-                    <h3 className="text-lg font-black text-slate-600 mb-2">分析準備OK</h3>
+                    <Brain size={64} className="mb-4 text-slate-300" />
+                    <h3 className="text-lg font-black text-slate-600 mb-2">分析スタンバイ完了</h3>
                     <p className="text-sm font-bold leading-relaxed">左側のパネルで製品情報の確認・編集、および追加情報の入力を行ってください。<br/>準備が完了したら、右上の「AI分析を実行する」ボタンを押して分析を開始します。</p>
                   </div>
                 ) : (
