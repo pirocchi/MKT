@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Activity, Eye, X, Loader2, Target, Crosshair, Quote, Image as ImageIcon, ShoppingCart, CheckSquare, Square, FileText, Zap, Cpu, MessageCircle, BarChart3, Calendar, ArrowUpDown, Star, LayoutGrid, List, Trash2, Save } from 'lucide-react';
+import { Activity, Eye, X, Loader2, Target, Crosshair, Quote, Image as ImageIcon, ShoppingCart, CheckSquare, Square, FileText, Zap, Cpu, MessageCircle, BarChart3, Calendar, ArrowUpDown, Star, LayoutGrid, List, Trash2 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 type Competitor = {
@@ -60,10 +60,9 @@ export default function DashboardClient({ initialData }: { initialData: Competit
   const [isUpdatingProduct, setIsUpdatingProduct] = useState(false);
   const [isDeletingNote, setIsDeletingNote] = useState(false); 
 
-  // 👑 新設ステート
   const [isAddingProduct, setIsAddingProduct] = useState(false);
   const [isSubmittingNewProduct, setIsSubmittingNewProduct] = useState(false);
-  const [isDeletingProduct, setIsDeletingProduct] = useState(false); // 💥 製品全体の削除用ステート
+  const [isDeletingProduct, setIsDeletingProduct] = useState(false); 
 
   const [newProduct, setNewProduct] = useState<Partial<Competitor>>({
     id: "", classification: "電気バリブラシ", brand: "", name: "", price: 0, tech: "", waterproof: "", pins: "", imageUrl: "", amazonUrl: "", rakutenUrl: "",
@@ -151,7 +150,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
       setProducts(prev => prev.map(p => p.id === payload.id ? payload : p));
       setEditedProduct(payload); 
       
-      alert("✅ データベースの製品情報を上書き更新しました。");
+      alert("✅ データベースの製品情報を上書き更新しました。フロントエンドの同期には少し時間がかかる場合があります。");
     } catch (err: any) {
       alert(`⚠️ データベース更新失敗: ${err.message}`);
     } finally {
@@ -159,7 +158,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
     }
   };
 
-  // 💥 待望の新機能：製品そのものを消し去る抹殺メソッド！
   const handleDeleteProduct = async () => {
     if (!editedProduct) return;
     if (!window.confirm(`「${editedProduct.brand} ${editedProduct.name}」をデータベースから完全に削除しますか？\n※この操作は取り消せません。`)) return;
@@ -174,9 +172,8 @@ export default function DashboardClient({ initialData }: { initialData: Competit
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "削除に失敗しました");
 
-      // 画面のローカルステートからも即座に消去！
       setProducts(prev => prev.filter(p => p.id !== editedProduct.id));
-      setSelectedProduct(null); // モーダルを閉じる
+      setSelectedProduct(null); 
       setEditedProduct(null);
       alert("✅ 競合製品をデータベースから完全に削除しました！");
     } catch (err: any) {
@@ -223,7 +220,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
       });
 
       setNoteText("");
-      alert("✅ 追加情報・メモを保存しました！");
+      alert("✅ 追加情報・メモを保存しました！フロントエンドの同期には少し時間がかかる場合があります。");
     } catch (err: any) {
       alert(`⚠️ 書き込み失敗: ${err.message}`);
     } finally {
@@ -582,6 +579,79 @@ export default function DashboardClient({ initialData }: { initialData: Competit
         </div>
       )}
 
+      {/* 👑 新設：競合製品の手動登録モーダル（拡張フォーム版 ＆ レスポンシブ修正版） */}
+      {isAddingProduct && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-mkt-surface border border-mkt-border rounded-xl w-full max-w-[95vw] h-[95vh] flex flex-col relative overflow-hidden shadow-2xl">
+            <button onClick={() => setIsAddingProduct(false)} className="absolute top-4 right-4 text-mkt-text-sub hover:text-mkt-makoto transition-colors z-20 bg-slate-100 hover:bg-slate-200 p-2 rounded-full shadow-sm"><X size={28} /></button>
+            
+            {/* 👑 修正：pr-16で×ボタンとの干渉を回避し、スマホ時は縦並びにする安全設計 */}
+            <div className="p-6 pr-16 border-b border-mkt-border bg-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <h3 className="text-xl font-black text-mkt-text-main flex items-center gap-2">
+                新規競合製品の登録
+              </h3>
+              <button onClick={handleAddProductSubmit} disabled={isSubmittingNewProduct} className="bg-mkt-surface border-2 border-mkt-asagi text-mkt-asagi hover:bg-mkt-asagi hover:text-white font-black py-2 px-4 rounded shadow-sm flex items-center gap-2 text-sm transition-colors disabled:opacity-50">
+                {isSubmittingNewProduct && <Loader2 size={16} className="animate-spin" />}
+                データベースに追加
+              </button>
+            </div>
+
+            <div className="flex-grow overflow-y-auto p-6 bg-slate-50 space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                {/* 左側：基本仕様フォーム */}
+                <div className="space-y-6">
+                  <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
+                    <h4 className="text-sm font-black text-slate-700 border-b border-slate-100 pb-2 mb-4">基本スペック</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div><label className={labelClass}>MKT-ID (必須 / 重複不可)</label><input type="text" placeholder="例: DBB-006" className={inputClass} value={newProduct.id} onChange={e => setNewProduct({...newProduct, id: e.target.value})} /></div>
+                      <div><label className={labelClass}>製品分類</label><input type="text" className={inputClass} value={newProduct.classification} onChange={e => setNewProduct({...newProduct, classification: e.target.value})} /></div>
+                      <div><label className={labelClass}>ブランド名 (必須)</label><input type="text" placeholder="例: A社" className={inputClass} value={newProduct.brand} onChange={e => setNewProduct({...newProduct, brand: e.target.value})} /></div>
+                      <div><label className={labelClass}>実売価格 (円)</label><input type="number" className={inputClass} value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: Number(e.target.value)})} /></div>
+                      <div className="md:col-span-2"><label className={labelClass}>商品名 (必須)</label><input type="text" placeholder="製品の正式名称" className={inputClass} value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} /></div>
+                      <div className="md:col-span-2"><label className={labelClass}>画像URL</label><input type="text" className={inputClass} value={newProduct.imageUrl} onChange={e => setNewProduct({...newProduct, imageUrl: e.target.value})} /></div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
+                    <h4 className="text-sm font-black text-slate-700 border-b border-slate-100 pb-2 mb-4">ハードウェア仕様</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div><label className={labelClass}>搭載テクノロジー</label><input type="text" placeholder="例: EMS / LED" className={inputClass} value={newProduct.tech} onChange={e => setNewProduct({...newProduct, tech: e.target.value})} /></div>
+                      <div><label className={labelClass}>防水規格</label><input type="text" placeholder="例: IPX5" className={inputClass} value={newProduct.waterproof} onChange={e => setNewProduct({...newProduct, waterproof: e.target.value})} /></div>
+                      <div className="md:col-span-2"><label className={labelClass}>ピン仕様</label><textarea className={`${inputClass} resize-none`} rows={2} placeholder="ピン本数や材質、柔軟性など" value={newProduct.pins} onChange={e => setNewProduct({...newProduct, pins: e.target.value})} /></div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
+                    <h4 className="text-sm font-black text-slate-700 border-b border-slate-100 pb-2 mb-4">ECリンク情報</h4>
+                    <div className="space-y-4">
+                      <div><label className={labelClass}>Amazon URL</label><input type="text" className={inputClass} value={newProduct.amazonUrl} onChange={e => setNewProduct({...newProduct, amazonUrl: e.target.value})} /></div>
+                      <div><label className={labelClass}>楽天市場 URL</label><input type="text" className={inputClass} value={newProduct.rakutenUrl} onChange={e => setNewProduct({...newProduct, rakutenUrl: e.target.value})} /></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 右側：公式の訴求内容（拡張テキストエリア） */}
+                <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm flex flex-col justify-between">
+                  <div>
+                    <h4 className="text-sm font-black text-slate-700 border-b border-slate-100 pb-2 mb-4">公式の訴求内容</h4>
+                    <div className="space-y-4">
+                      <div><label className={labelClass}>対象顧客</label><input type="text" placeholder="例: 頭皮の硬さや顔のたるみが気になる30〜50代" className={inputClass} value={newProduct.claims?.target} onChange={e => setNewProduct({...newProduct, claims: {...newProduct.claims!, target: e.target.value}})} /></div>
+                      <div><label className={labelClass}>訴求事項</label><textarea className={`${inputClass} resize-none`} rows={3} placeholder="どんな悩みを解決すると主張しているか" value={newProduct.claims?.problem} onChange={e => setNewProduct({...newProduct, claims: {...newProduct.claims!, problem: e.target.value}})} /></div>
+                      <div><label className={labelClass}>最大の強み(USP)</label><textarea className={`${inputClass} resize-none`} rows={3} placeholder="他社に対する圧倒的優位点" value={newProduct.claims?.usp} onChange={e => setNewProduct({...newProduct, claims: {...newProduct.claims!, usp: e.target.value}})} /></div>
+                      <div><label className={labelClass}>痛みのなさ</label><textarea className={`${inputClass} resize-none`} rows={3} placeholder="刺激レベルや痛みの少なさに関する訴求" value={newProduct.claims?.pain} onChange={e => setNewProduct({...newProduct, claims: {...newProduct.claims!, pain: e.target.value}})} /></div>
+                      <div><label className={labelClass}>手軽さ</label><textarea className={`${inputClass} resize-none`} rows={3} placeholder="お風呂での使用、コードレス、操作性など" value={newProduct.claims?.ease} onChange={e => setNewProduct({...newProduct, claims: {...newProduct.claims!, ease: e.target.value}})} /></div>
+                      <div><label className={labelClass}>公式広告文案</label><textarea className={`${inputClass} resize-none`} rows={3} placeholder="実際のLPや広告で使われているメインのコピー文案" value={newProduct.claims?.copy} onChange={e => setNewProduct({...newProduct, claims: {...newProduct.claims!, copy: e.target.value}})} /></div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 個別製品の詳細編集 ＆ 分析モーダル */}
       {selectedProduct && editedProduct && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -592,17 +662,17 @@ export default function DashboardClient({ initialData }: { initialData: Competit
               
               {/* 左ペイン：製品情報の完全編集 ＆ 追加情報メモ */}
               <div className="p-6 lg:w-1/2 border-r border-mkt-border bg-slate-50 overflow-y-auto relative flex flex-col">
-                <div className="flex justify-between items-center mb-6">
+                {/* 👑 修正：pr-16 lg:pr-0 を追加し、ボタン領域を折り返し対応にしてXボタンと絶対に干渉させない */}
+                <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-6 gap-4 pr-16 lg:pr-0">
                   <h3 className="text-xl font-black text-mkt-text-main flex items-center gap-2">
-                    <FileText className="text-mkt-asagi" /> 製品データの確認・編集
+                    製品データの確認・編集
                   </h3>
-                  {/* 👑 削除ボタンと更新ボタンを並べて配置！ */}
-                  <div className="flex gap-2">
-                    <button onClick={handleDeleteProduct} disabled={isDeletingProduct || isUpdatingProduct} className="bg-white border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white font-black py-2 px-3 rounded shadow-sm flex items-center gap-2 text-sm transition-colors disabled:opacity-50">
+                  <div className="flex flex-wrap gap-2 w-full xl:w-auto">
+                    <button onClick={handleDeleteProduct} disabled={isDeletingProduct || isUpdatingProduct} className="flex-1 xl:flex-none justify-center bg-white border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white font-black py-2 px-3 rounded shadow-sm flex items-center gap-2 text-sm transition-colors disabled:opacity-50">
                       {isDeletingProduct ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
                       製品を削除
                     </button>
-                    <button onClick={handleUpdateProduct} disabled={isUpdatingProduct || isDeletingProduct} className="bg-mkt-surface border-2 border-mkt-asagi text-mkt-asagi hover:bg-mkt-asagi hover:text-white font-black py-2 px-4 rounded shadow-sm flex items-center gap-2 text-sm transition-colors disabled:opacity-50">
+                    <button onClick={handleUpdateProduct} disabled={isUpdatingProduct || isDeletingProduct} className="flex-1 xl:flex-none justify-center bg-mkt-surface border-2 border-mkt-asagi text-mkt-asagi hover:bg-mkt-asagi hover:text-white font-black py-2 px-4 rounded shadow-sm flex items-center gap-2 text-sm transition-colors disabled:opacity-50">
                       {isUpdatingProduct && <Loader2 size={16} className="animate-spin" />}
                       製品データを更新
                     </button>
@@ -693,9 +763,10 @@ export default function DashboardClient({ initialData }: { initialData: Competit
 
               {/* 右ペイン：AI統合分析 ＆ レビュー統計 */}
               <div className="p-6 lg:w-1/2 flex flex-col bg-mkt-surface overflow-y-auto">
-                <div className="flex justify-between items-center mb-6 border-b border-mkt-border pb-4 pr-12">
+                {/* 👑 修正：pr-4 lg:pr-16 を追加し、PC表示時のXボタンとの干渉を完全回避 */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b border-mkt-border pb-4 gap-4 pr-4 lg:pr-16">
                   <h4 className="font-bold tracking-widest text-mkt-text-main flex items-center gap-3 text-xl">
-                    <Crosshair className="text-mkt-makoto" /> AI統合分析 ＆ 顧客評価
+                    AI統合分析 ＆ 顧客評価
                   </h4>
                   
                   {!isAnalyzing && !analyzedData && (
@@ -778,7 +849,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                             
                             <div className="mt-4 bg-mkt-makoto/5 border border-mkt-makoto/20 p-4 rounded-md">
                               <span className="text-xs text-mkt-makoto font-bold tracking-widest mb-2 flex items-center gap-2">
-                                <Target size={14} /> 当社の戦略的方針
+                                当社の戦略的方針
                               </span>
                               <p className="text-sm text-mkt-text-main leading-relaxed font-bold">{gap.opportunity}</p>
                             </div>
@@ -893,78 +964,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                     )}
                   </div>
                 )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 👑 新設：競合製品の手動登録モーダル（拡張フォーム版） */}
-      {isAddingProduct && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-mkt-surface border border-mkt-border rounded-xl w-full max-w-[95vw] h-[95vh] flex flex-col relative overflow-hidden shadow-2xl">
-            <button onClick={() => setIsAddingProduct(false)} className="absolute top-4 right-4 text-mkt-text-sub hover:text-mkt-makoto transition-colors z-20 bg-slate-100 hover:bg-slate-200 p-2 rounded-full shadow-sm"><X size={28} /></button>
-            
-            <div className="p-6 border-b border-mkt-border bg-white flex justify-between items-center">
-              <h3 className="text-xl font-black text-mkt-text-main flex items-center gap-2">
-                <FileText className="text-mkt-asagi" /> 新規競合製品の登録
-              </h3>
-              <button onClick={handleAddProductSubmit} disabled={isSubmittingNewProduct} className="bg-mkt-surface border-2 border-mkt-asagi text-mkt-asagi hover:bg-mkt-asagi hover:text-white font-black py-2 px-4 rounded shadow-sm flex items-center gap-2 text-sm transition-colors disabled:opacity-50">
-                {isSubmittingNewProduct && <Loader2 size={16} className="animate-spin" />}
-                データベースに追加
-              </button>
-            </div>
-
-            <div className="flex-grow overflow-y-auto p-6 bg-slate-50 space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                
-                {/* 左側：基本仕様フォーム */}
-                <div className="space-y-6">
-                  <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
-                    <h4 className="text-sm font-black text-slate-700 border-b border-slate-100 pb-2 mb-4">基本スペック</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div><label className={labelClass}>MKT-ID (必須 / 重複不可)</label><input type="text" placeholder="例: DBB-006" className={inputClass} value={newProduct.id} onChange={e => setNewProduct({...newProduct, id: e.target.value})} /></div>
-                      <div><label className={labelClass}>製品分類</label><input type="text" className={inputClass} value={newProduct.classification} onChange={e => setNewProduct({...newProduct, classification: e.target.value})} /></div>
-                      <div><label className={labelClass}>ブランド名 (必須)</label><input type="text" placeholder="例: A社" className={inputClass} value={newProduct.brand} onChange={e => setNewProduct({...newProduct, brand: e.target.value})} /></div>
-                      <div><label className={labelClass}>実売価格 (円)</label><input type="number" className={inputClass} value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: Number(e.target.value)})} /></div>
-                      <div className="md:col-span-2"><label className={labelClass}>商品名 (必須)</label><input type="text" placeholder="製品の正式名称" className={inputClass} value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} /></div>
-                      <div className="md:col-span-2"><label className={labelClass}>画像URL</label><input type="text" className={inputClass} value={newProduct.imageUrl} onChange={e => setNewProduct({...newProduct, imageUrl: e.target.value})} /></div>
-                    </div>
-                  </div>
-
-                  <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
-                    <h4 className="text-sm font-black text-slate-700 border-b border-slate-100 pb-2 mb-4">ハードウェア仕様</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div><label className={labelClass}>搭載テクノロジー</label><input type="text" placeholder="例: EMS / LED" className={inputClass} value={newProduct.tech} onChange={e => setNewProduct({...newProduct, tech: e.target.value})} /></div>
-                      <div><label className={labelClass}>防水規格</label><input type="text" placeholder="例: IPX5" className={inputClass} value={newProduct.waterproof} onChange={e => setNewProduct({...newProduct, waterproof: e.target.value})} /></div>
-                      <div className="md:col-span-2"><label className={labelClass}>ピン仕様</label><textarea className={`${inputClass} resize-none`} rows={2} placeholder="ピン本数や材質、柔軟性など" value={newProduct.pins} onChange={e => setNewProduct({...newProduct, pins: e.target.value})} /></div>
-                    </div>
-                  </div>
-
-                  <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
-                    <h4 className="text-sm font-black text-slate-700 border-b border-slate-100 pb-2 mb-4">ECリンク情報</h4>
-                    <div className="space-y-4">
-                      <div><label className={labelClass}>Amazon URL</label><input type="text" className={inputClass} value={newProduct.amazonUrl} onChange={e => setNewProduct({...newProduct, amazonUrl: e.target.value})} /></div>
-                      <div><label className={labelClass}>楽天市場 URL</label><input type="text" className={inputClass} value={newProduct.rakutenUrl} onChange={e => setNewProduct({...newProduct, rakutenUrl: e.target.value})} /></div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 右側：公式の訴求内容（拡張テキストエリア） */}
-                <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm flex flex-col justify-between">
-                  <div>
-                    <h4 className="text-sm font-black text-slate-700 border-b border-slate-100 pb-2 mb-4">公式の訴求内容</h4>
-                    <div className="space-y-4">
-                      <div><label className={labelClass}>対象顧客</label><input type="text" placeholder="例: 頭皮の硬さや顔のたるみが気になる30〜50代" className={inputClass} value={newProduct.claims?.target} onChange={e => setNewProduct({...newProduct, claims: {...newProduct.claims!, target: e.target.value}})} /></div>
-                      <div><label className={labelClass}>訴求事項</label><textarea className={`${inputClass} resize-none`} rows={3} placeholder="どんな悩みを解決すると主張しているか" value={newProduct.claims?.problem} onChange={e => setNewProduct({...newProduct, claims: {...newProduct.claims!, problem: e.target.value}})} /></div>
-                      <div><label className={labelClass}>最大の強み(USP)</label><textarea className={`${inputClass} resize-none`} rows={3} placeholder="他社に対する圧倒的優位点" value={newProduct.claims?.usp} onChange={e => setNewProduct({...newProduct, claims: {...newProduct.claims!, usp: e.target.value}})} /></div>
-                      <div><label className={labelClass}>痛みのなさ</label><textarea className={`${inputClass} resize-none`} rows={3} placeholder="刺激レベルや痛みの少なさに関する訴求" value={newProduct.claims?.pain} onChange={e => setNewProduct({...newProduct, claims: {...newProduct.claims!, pain: e.target.value}})} /></div>
-                      <div><label className={labelClass}>手軽さ</label><textarea className={`${inputClass} resize-none`} rows={3} placeholder="お風呂での使用、コードレス、操作性など" value={newProduct.claims?.ease} onChange={e => setNewProduct({...newProduct, claims: {...newProduct.claims!, ease: e.target.value}})} /></div>
-                      <div><label className={labelClass}>公式広告文案</label><textarea className={`${inputClass} resize-none`} rows={3} placeholder="実際のLPや広告で使われているメインのコピー文案" value={newProduct.claims?.copy} onChange={e => setNewProduct({...newProduct, claims: {...newProduct.claims!, copy: e.target.value}})} /></div>
-                    </div>
-                  </div>
-                </div>
-
               </div>
             </div>
           </div>
