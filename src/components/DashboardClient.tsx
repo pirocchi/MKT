@@ -14,10 +14,8 @@ type SentimentData = { sentiments: { name: string; value: number; color: string 
 type ProductPlan = { conceptName: string; targetPrice: string; coreFeatures: string[]; differentiation: string; mainCopy: string; };
 
 export default function DashboardClient({ initialData }: { initialData: Competitor[] }) {
-  // 👑 新設：画面全体のデータをリアルタイム管理する究極のローカルステート！
   const [products, setProducts] = useState<Competitor[]>(initialData);
 
-  // 👑 追加：Next.jsのサーバー側でデータが更新された際、フロントエンドも確実に同期させる安全装置
   useEffect(() => {
     setProducts(initialData);
   }, [initialData]);
@@ -42,7 +40,18 @@ export default function DashboardClient({ initialData }: { initialData: Competit
   const [filterRating, setFilterRating] = useState<string>('ALL');
   const [sortOrder, setSortOrder] = useState<string>('DATE_DESC');
 
+  // 👑 レイアウト記憶機能の実装（初期値はlocalStorageから取得、なければ'grid'）
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  useEffect(() => {
+    const savedMode = localStorage.getItem('mkt-view-mode');
+    if (savedMode === 'list' || savedMode === 'grid') {
+      setViewMode(savedMode);
+    }
+  }, []);
+  const handleSetViewMode = (mode: 'grid' | 'list') => {
+    setViewMode(mode);
+    localStorage.setItem('mkt-view-mode', mode);
+  };
 
   const [localNotes, setLocalNotes] = useState<any[]>([]);
   const [noteAuthor, setNoteAuthor] = useState("");
@@ -61,7 +70,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
   };
 
   const handleOpenDetail = (item: Competitor) => {
-    // 👑 修正の核心：引数のitemではなく、常に最新の products ステートからデータを引く！
     const currentProduct = products.find(p => p.id === item.id) || item;
 
     setSelectedProduct(currentProduct);
@@ -313,8 +321,8 @@ export default function DashboardClient({ initialData }: { initialData: Competit
         </div>
         <div className="flex gap-4 items-center">
           <div className="flex bg-slate-200/50 p-1 rounded-lg">
-            <button onClick={() => setViewMode('grid')} className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white shadow text-mkt-makoto' : 'text-slate-500 hover:text-mkt-makoto'}`} title="カード表示"><LayoutGrid size={20} /></button>
-            <button onClick={() => setViewMode('list')} className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow text-mkt-makoto' : 'text-slate-500 hover:text-mkt-makoto'}`} title="リスト表示"><List size={20} /></button>
+            <button onClick={() => handleSetViewMode('grid')} className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white shadow text-mkt-makoto' : 'text-slate-500 hover:text-mkt-makoto'}`} title="カード表示"><LayoutGrid size={20} /></button>
+            <button onClick={() => handleSetViewMode('list')} className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow text-mkt-makoto' : 'text-slate-500 hover:text-mkt-makoto'}`} title="リスト表示"><List size={20} /></button>
           </div>
           <div className="hidden md:flex bg-mkt-surface border border-mkt-border px-4 py-2 rounded items-center gap-2 font-bold shadow-sm">
             <Activity size={16} className="text-green-500" /> AI 連携完了
@@ -354,7 +362,8 @@ export default function DashboardClient({ initialData }: { initialData: Competit
 
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex gap-2">
-                    <span className="text-xs font-bold text-white bg-mkt-asagi px-2 py-1 rounded">{item.classification}</span>
+                    {/* 👑 修正：製品分類の配色をダーク系(bg-slate-700)に変更し視認性向上 */}
+                    <span className="text-xs font-bold text-white bg-slate-700 px-2 py-1 rounded">{item.classification}</span>
                     {noteCount > 0 && (
                       <span className="text-[10px] bg-yellow-100 text-yellow-700 border border-yellow-300 px-2 py-1 rounded font-black tracking-wider flex items-center gap-1">
                         📝 メモ {noteCount}件
@@ -367,7 +376,8 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                 
                 <div className="flex flex-wrap gap-2 mb-4">
                   <span className="text-[10px] bg-mkt-asagi/10 text-mkt-asagi border border-mkt-asagi/30 px-2 py-1 rounded font-black tracking-wider">{item.tech}</span>
-                  <span className="text-[10px] bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded font-black tracking-wider">防水: {item.waterproof}</span>
+                  {/* 👑 修正：「防水: 」のプレフィックスを削除 */}
+                  <span className="text-[10px] bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded font-black tracking-wider">{item.waterproof}</span>
                 </div>
 
                 <div className="space-y-5 mb-6 flex-grow">
@@ -375,6 +385,13 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                     <span className="text-mkt-text-sub font-bold">実売価格</span>
                     <span className="font-black text-3xl text-mkt-text-main tracking-tight">¥{item.price.toLocaleString()}</span>
                   </div>
+                  
+                  {/* 👑 追加：カードレイアウトに平均評価とレビュー数を明記 */}
+                  <div className="flex justify-between items-center border-b border-mkt-border pb-3">
+                    <span className="text-mkt-text-sub font-bold text-xs">平均評価: <span className="text-yellow-500 text-sm">★ {item.averageRating || "-"}</span></span>
+                    <span className="text-mkt-text-sub font-bold text-xs">レビュー: <span className="text-mkt-asagi text-sm">{item.reviews.toLocaleString()}</span> 件</span>
+                  </div>
+
                   <div className="bg-slate-50 p-3 rounded mt-2 border border-slate-200">
                     <span className="text-xs text-mkt-asagi font-black mb-1 block tracking-wider">公式広告文案:</span>
                     <p className="text-sm font-bold italic text-mkt-text-main truncate">"{item.claims?.copy || '未設定'}"</p>
@@ -382,7 +399,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                 </div>
 
                 <button onClick={() => handleOpenDetail(item)} className="w-full bg-mkt-surface border-2 border-mkt-makoto text-mkt-makoto py-3 rounded hover:bg-mkt-makoto hover:text-white transition-colors font-black tracking-wider flex justify-center items-center gap-2 text-lg">
-                  詳細確認 ＆ 分析
+                  <Target size={20} /> 詳細確認 ＆ 分析
                 </button>
               </div>
             );
@@ -522,11 +539,14 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
                     <h4 className="text-sm font-black text-slate-700 border-b border-slate-100 pb-2 mb-4">公式の訴求内容</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div><label className={labelClass}>対象顧客</label><input type="text" className={inputClass} value={editedProduct.claims?.target} onChange={e => setEditedProduct({...editedProduct, claims: {...editedProduct.claims!, target: e.target.value}})} /></div>
-                      <div><label className={labelClass}>訴求事項</label><input type="text" className={inputClass} value={editedProduct.claims?.problem} onChange={e => setEditedProduct({...editedProduct, claims: {...editedProduct.claims!, problem: e.target.value}})} /></div>
-                      <div><label className={labelClass}>最大の強み</label><input type="text" className={inputClass} value={editedProduct.claims?.usp} onChange={e => setEditedProduct({...editedProduct, claims: {...editedProduct.claims!, usp: e.target.value}})} /></div>
-                      <div><label className={labelClass}>痛みのなさ</label><input type="text" className={inputClass} value={editedProduct.claims?.pain} onChange={e => setEditedProduct({...editedProduct, claims: {...editedProduct.claims!, pain: e.target.value}})} /></div>
-                      <div><label className={labelClass}>手軽さ</label><input type="text" className={inputClass} value={editedProduct.claims?.ease} onChange={e => setEditedProduct({...editedProduct, claims: {...editedProduct.claims!, ease: e.target.value}})} /></div>
+                      {/* 👑 修正：対象顧客以外を textarea(rows=3) に変更して入力しやすく拡張！ */}
+                      <div className="md:col-span-2"><label className={labelClass}>対象顧客</label><input type="text" className={inputClass} value={editedProduct.claims?.target} onChange={e => setEditedProduct({...editedProduct, claims: {...editedProduct.claims!, target: e.target.value}})} /></div>
+                      
+                      <div className="md:col-span-2"><label className={labelClass}>訴求事項</label><textarea className={`${inputClass} resize-none`} rows={3} value={editedProduct.claims?.problem} onChange={e => setEditedProduct({...editedProduct, claims: {...editedProduct.claims!, problem: e.target.value}})} /></div>
+                      <div className="md:col-span-2"><label className={labelClass}>最大の強み</label><textarea className={`${inputClass} resize-none`} rows={3} value={editedProduct.claims?.usp} onChange={e => setEditedProduct({...editedProduct, claims: {...editedProduct.claims!, usp: e.target.value}})} /></div>
+                      <div className="md:col-span-2"><label className={labelClass}>痛みのなさ</label><textarea className={`${inputClass} resize-none`} rows={3} value={editedProduct.claims?.pain} onChange={e => setEditedProduct({...editedProduct, claims: {...editedProduct.claims!, pain: e.target.value}})} /></div>
+                      <div className="md:col-span-2"><label className={labelClass}>手軽さ</label><textarea className={`${inputClass} resize-none`} rows={3} value={editedProduct.claims?.ease} onChange={e => setEditedProduct({...editedProduct, claims: {...editedProduct.claims!, ease: e.target.value}})} /></div>
+                      
                       <div className="md:col-span-2"><label className={labelClass}>公式広告文案</label><textarea className={`${inputClass} resize-none`} rows={3} value={editedProduct.claims?.copy} onChange={e => setEditedProduct({...editedProduct, claims: {...editedProduct.claims!, copy: e.target.value}})} /></div>
                     </div>
                   </div>
@@ -534,7 +554,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
 
                 <div className="mt-8 mb-4 p-5 bg-white border-l-4 border-mkt-makoto border-y border-r border-slate-200 rounded shadow-sm">
                   <h4 className="text-sm text-mkt-makoto font-black tracking-widest mb-3 flex items-center gap-2">
-                    追加情報・メモ
+                    <Brain size={16} /> 追加情報・メモ
                   </h4>
                   
                   {localNotes.length === 0 ? (
@@ -564,7 +584,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   <div className="border-t border-slate-200 pt-4 mt-2">
                     <span className="text-[10px] text-mkt-asagi font-black block mb-2 tracking-wider">新しい情報を追記する</span>
                     <div className="grid grid-cols-2 gap-3 mb-3">
-                      <input type="text" placeholder="投稿者 (例: 山田)" value={noteAuthor} onChange={(e) => setNoteAuthor(e.target.value)} className={inputClass} />
+                      <input type="text" placeholder="投稿者 (例: 渡辺)" value={noteAuthor} onChange={(e) => setNoteAuthor(e.target.value)} className={inputClass} />
                       <select value={noteCategory} onChange={(e) => setNoteCategory(e.target.value)} className={`${inputClass} cursor-pointer`}>
                         <option value="商談・メーカー情報">商談・メーカー情報</option>
                         <option value="市場・競合調査">市場・競合調査</option>
