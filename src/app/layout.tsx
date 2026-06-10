@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 
 // 👑 メタデータを「MKT」仕様に書き換え！
 export const metadata: Metadata = {
-  title: "MKT Intelligence Unit | 競合監視網",
-  description: "ELECTRIC BRUSH COMPETITOR MONITORING SYSTEM",
+  title: "MKT | 競合分析ツール",
+  description: "Competitive Analysis Tools",
 };
 
 export default function RootLayout({
