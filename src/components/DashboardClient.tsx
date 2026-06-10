@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Activity, Eye, X, Loader2, Target, Crosshair, Quote, Image as ImageIcon, ShoppingCart, CheckSquare, Square, FileText, Zap, Cpu, MessageCircle, BarChart3, Calendar, ArrowUpDown, Star, LayoutGrid, List, Trash2 } from 'lucide-react';
+import { Activity, Eye, X, Loader2, Target, Crosshair, Quote, Image as ImageIcon, ShoppingCart, CheckSquare, Square, FileText, Zap, Cpu, MessageCircle, BarChart3, Calendar, ArrowUpDown, Star, LayoutGrid, List, Trash2, Save } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 type Competitor = {
@@ -60,9 +60,11 @@ export default function DashboardClient({ initialData }: { initialData: Competit
   const [isUpdatingProduct, setIsUpdatingProduct] = useState(false);
   const [isDeletingNote, setIsDeletingNote] = useState(false); 
 
-  // 👑 新設：新規製品追加モーダル用のステート群
+  // 👑 新設ステート
   const [isAddingProduct, setIsAddingProduct] = useState(false);
   const [isSubmittingNewProduct, setIsSubmittingNewProduct] = useState(false);
+  const [isDeletingProduct, setIsDeletingProduct] = useState(false); // 💥 製品全体の削除用ステート
+
   const [newProduct, setNewProduct] = useState<Partial<Competitor>>({
     id: "", classification: "電気バリブラシ", brand: "", name: "", price: 0, tech: "", waterproof: "", pins: "", imageUrl: "", amazonUrl: "", rakutenUrl: "",
     claims: { target: "", problem: "", usp: "", pain: "", ease: "", copy: "" }
@@ -149,11 +151,38 @@ export default function DashboardClient({ initialData }: { initialData: Competit
       setProducts(prev => prev.map(p => p.id === payload.id ? payload : p));
       setEditedProduct(payload); 
       
-      alert("✅ データベースの製品情報を上書き更新しました。フロントエンドの同期には少し時間がかかる場合があります。");
+      alert("✅ データベースの製品情報を上書き更新しました。");
     } catch (err: any) {
       alert(`⚠️ データベース更新失敗: ${err.message}`);
     } finally {
       setIsUpdatingProduct(false);
+    }
+  };
+
+  // 💥 待望の新機能：製品そのものを消し去る抹殺メソッド！
+  const handleDeleteProduct = async () => {
+    if (!editedProduct) return;
+    if (!window.confirm(`「${editedProduct.brand} ${editedProduct.name}」をデータベースから完全に削除しますか？\n※この操作は取り消せません。`)) return;
+
+    setIsDeletingProduct(true);
+    try {
+      const res = await fetch('/api/delete-product', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: editedProduct.id })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "削除に失敗しました");
+
+      // 画面のローカルステートからも即座に消去！
+      setProducts(prev => prev.filter(p => p.id !== editedProduct.id));
+      setSelectedProduct(null); // モーダルを閉じる
+      setEditedProduct(null);
+      alert("✅ 競合製品をデータベースから完全に削除しました！");
+    } catch (err: any) {
+      alert(`⚠️ 削除失敗: ${err.message}`);
+    } finally {
+      setIsDeletingProduct(false);
     }
   };
 
@@ -194,7 +223,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
       });
 
       setNoteText("");
-      alert("✅ 追加情報・メモを保存しました！フロントエンドの同期には少し時間がかかる場合があります。");
+      alert("✅ 追加情報・メモを保存しました！");
     } catch (err: any) {
       alert(`⚠️ 書き込み失敗: ${err.message}`);
     } finally {
@@ -231,7 +260,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
     }
   };
 
-  // 👑 新設：手動製品追加のSubmit処理
   const handleAddProductSubmit = async () => {
     if (!newProduct.id || !newProduct.brand || !newProduct.name) {
       alert("⚠️ MKT-ID、ブランド名、商品名は必須入力項目です。");
@@ -247,7 +275,6 @@ export default function DashboardClient({ initialData }: { initialData: Competit
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "製品の追加に失敗しました");
 
-      // 大元のローカルステートに完全同期！
       const completeNewProduct: Competitor = {
         id: newProduct.id,
         classification: newProduct.classification || "電気バリブラシ",
@@ -374,11 +401,10 @@ export default function DashboardClient({ initialData }: { initialData: Competit
             <span className="text-mkt-makoto">MKT</span><span>競合分析画面</span>
           </h1>
           <p className="text-mkt-asagi text-xs md:text-sm mt-2 tracking-widest flex items-center gap-2 font-bold">
-            競合製品の市場評価 and 方針の比較
+            競合製品の市場評価と方針の比較
           </p>
         </div>
         <div className="flex gap-4 items-center">
-          {/* 👑 追加：新規競合製品を追加するための無駄のないボタン */}
           <button onClick={() => setIsAddingProduct(true)} className="bg-mkt-surface border-2 border-mkt-asagi text-mkt-asagi hover:bg-mkt-asagi hover:text-white font-black py-2 px-4 rounded shadow-sm flex items-center gap-2 text-sm transition-colors">
             競合製品を追加
           </button>
@@ -570,10 +596,17 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   <h3 className="text-xl font-black text-mkt-text-main flex items-center gap-2">
                     <FileText className="text-mkt-asagi" /> 製品データの確認・編集
                   </h3>
-                  <button onClick={handleUpdateProduct} disabled={isUpdatingProduct} className="bg-mkt-surface border-2 border-mkt-asagi text-mkt-asagi hover:bg-mkt-asagi hover:text-white font-black py-2 px-4 rounded shadow-sm flex items-center gap-2 text-sm transition-colors disabled:opacity-50">
-                    {isUpdatingProduct && <Loader2 size={16} className="animate-spin" />}
-                    製品データを更新
-                  </button>
+                  {/* 👑 削除ボタンと更新ボタンを並べて配置！ */}
+                  <div className="flex gap-2">
+                    <button onClick={handleDeleteProduct} disabled={isDeletingProduct || isUpdatingProduct} className="bg-white border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white font-black py-2 px-3 rounded shadow-sm flex items-center gap-2 text-sm transition-colors disabled:opacity-50">
+                      {isDeletingProduct ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                      製品を削除
+                    </button>
+                    <button onClick={handleUpdateProduct} disabled={isUpdatingProduct || isDeletingProduct} className="bg-mkt-surface border-2 border-mkt-asagi text-mkt-asagi hover:bg-mkt-asagi hover:text-white font-black py-2 px-4 rounded shadow-sm flex items-center gap-2 text-sm transition-colors disabled:opacity-50">
+                      {isUpdatingProduct && <Loader2 size={16} className="animate-spin" />}
+                      製品データを更新
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-6">
@@ -688,7 +721,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                 ) : !analyzedData ? (
                   <div className="flex-grow flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-300 rounded-lg m-4 p-8 text-center">
                     <h3 className="text-lg font-black text-slate-600 mb-2">分析準備OK</h3>
-                    <p className="text-sm font-bold leading-relaxed">左側のパネルで製品情報の確認・編集、および追加情報の入力を行ってください。<br/>準備が完了したら、右上の「AI分析を実行する']ボタンを押して分析を開始します。</p>
+                    <p className="text-sm font-bold leading-relaxed">左側のパネルで製品情報の確認・編集、および追加情報の入力を行ってください。<br/>準備が完了したら、右上の「AI分析を実行する」ボタンを押して分析を開始します。</p>
                   </div>
                 ) : (
                   <div className="animate-in fade-in slide-in-from-right-8 duration-500 flex flex-col gap-8">

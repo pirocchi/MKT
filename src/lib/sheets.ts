@@ -275,3 +275,40 @@ export async function updateProductInSheet(productData: any) {
     });
   }
 }
+
+// 👑 新規追加：指定したMKT-IDの製品をデータベースとメモから完全に消し去るメソッド
+export async function deleteProductFromSheet(mktId: string) {
+  const auth = getAuthClient();
+  const sheets = google.sheets({ version: "v4", auth });
+  const spreadsheetId = process.env.SPREADSHEET_ID;
+
+  // 1. MKT_DBから該当製品を削除
+  const dbResponse = await sheets.spreadsheets.values.get({ spreadsheetId, range: "MKT_DB!A:T" });
+  const dbRows = dbResponse.data.values || [];
+  if (dbRows.length > 0) {
+    const header = dbRows[0];
+    const filteredDb = dbRows.slice(1).filter(row => row[0] !== mktId); // 該当ID以外を残す
+    await sheets.spreadsheets.values.clear({ spreadsheetId, range: "MKT_DB!A:T" });
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: "MKT_DB!A1",
+      valueInputOption: "USER_ENTERED",
+      requestBody: { values: [header, ...filteredDb] },
+    });
+  }
+
+  // 2. HUMINT_Notesからも該当製品のメモをすべて削除
+  const humintResponse = await sheets.spreadsheets.values.get({ spreadsheetId, range: "HUMINT_Notes!A:E" }).catch(() => null);
+  const humintRows = humintResponse?.data?.values || [];
+  if (humintRows.length > 0) {
+    const header = humintRows[0];
+    const filteredHumint = humintRows.slice(1).filter(row => row[0] !== mktId);
+    await sheets.spreadsheets.values.clear({ spreadsheetId, range: "HUMINT_Notes!A:E" });
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: "HUMINT_Notes!A1",
+      valueInputOption: "USER_ENTERED",
+      requestBody: { values: [header, ...filteredHumint] },
+    });
+  }
+}
