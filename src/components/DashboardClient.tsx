@@ -22,7 +22,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
 
   const [selectedProduct, setSelectedProduct] = useState<Competitor | null>(null);
   const [editedProduct, setEditedProduct] = useState<Competitor | null>(null);
-  
+
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analyzedData, setAnalyzedData] = useState<SentimentData | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
@@ -58,11 +58,11 @@ export default function DashboardClient({ initialData }: { initialData: Competit
   const [noteText, setNoteText] = useState("");
   const [isSavingNote, setIsSavingNote] = useState(false);
   const [isUpdatingProduct, setIsUpdatingProduct] = useState(false);
-  const [isDeletingNote, setIsDeletingNote] = useState(false); 
+  const [isDeletingNote, setIsDeletingNote] = useState(false);
 
   const [isAddingProduct, setIsAddingProduct] = useState(false);
   const [isSubmittingNewProduct, setIsSubmittingNewProduct] = useState(false);
-  const [isDeletingProduct, setIsDeletingProduct] = useState(false); 
+  const [isDeletingProduct, setIsDeletingProduct] = useState(false);
 
   const [newProduct, setNewProduct] = useState<Partial<Competitor>>({
     id: "", classification: "電気バリブラシ", brand: "", name: "", price: 0, tech: "", waterproof: "", pins: "", imageUrl: "", amazonUrl: "", rakutenUrl: "",
@@ -81,7 +81,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
     const currentProduct = products.find(p => p.id === item.id) || item;
 
     setSelectedProduct(currentProduct);
-    setEditedProduct(JSON.parse(JSON.stringify(currentProduct))); 
+    setEditedProduct(JSON.parse(JSON.stringify(currentProduct)));
     setAnalyzedData(null);
     setErrorMsg("");
     setVisibleReviewCount(50);
@@ -95,18 +95,18 @@ export default function DashboardClient({ initialData }: { initialData: Competit
 
   const executeAnalysis = async (modelType: string) => {
     if (pendingProduct) {
-      const item = pendingProduct; 
+      const item = pendingProduct;
       setPendingProduct(null);
-      
+
       const humintNotesText = localNotes.map((n: any) => `[${n.date}][${n.author}][${n.category}] ${n.note}`).join('\n');
-      
+
       setIsAnalyzing(true);
       try {
         const res = await fetch('/api/analyze', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            reviewsText: item.rawReviews, 
-            claims: item.claims || {}, 
+          body: JSON.stringify({
+            reviewsText: item.rawReviews,
+            claims: item.claims || {},
             averageRating: item.averageRating || "-",
             model: modelType,
             humintNotes: humintNotesText
@@ -116,7 +116,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
         if (!res.ok) throw new Error(data.error || "分析中に問題が発生しました");
         setAnalyzedData(data);
       } catch (err: any) { setErrorMsg(err.message); } finally { setIsAnalyzing(false); }
-    } 
+    }
     else if (pendingPlan) {
       setPendingPlan(false);
       setPlanData(null); setIsGeneratingPlan(true);
@@ -146,10 +146,10 @@ export default function DashboardClient({ initialData }: { initialData: Competit
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "更新に失敗しました");
-      
+
       setProducts(prev => prev.map(p => p.id === payload.id ? payload : p));
-      setEditedProduct(payload); 
-      
+      setEditedProduct(payload);
+
       alert("✅ データベースの製品情報を上書き更新しました。フロントエンドの同期には少し時間がかかる場合があります。");
     } catch (err: any) {
       alert(`⚠️ データベース更新失敗: ${err.message}`);
@@ -173,7 +173,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
       if (!res.ok) throw new Error(data.error || "削除に失敗しました");
 
       setProducts(prev => prev.filter(p => p.id !== editedProduct.id));
-      setSelectedProduct(null); 
+      setSelectedProduct(null);
       setEditedProduct(null);
       alert("✅ 競合製品をデータベースから完全に削除しました！");
     } catch (err: any) {
@@ -196,23 +196,23 @@ export default function DashboardClient({ initialData }: { initialData: Competit
           author: noteAuthor || "匿名ユーザー"
         })
       });
-      
+
       const newNote = {
         date: new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
         author: noteAuthor || "匿名ユーザー",
         category: noteCategory,
         note: noteText
       };
-      
+
       const updatedNotes = [...localNotes, newNote];
       setLocalNotes(updatedNotes);
-      
+
       const updatedHumintStr = JSON.stringify(updatedNotes);
       const updatedProduct = { ...editedProduct, rawHumint: updatedHumintStr };
-      
+
       setEditedProduct(updatedProduct);
       setProducts(prev => prev.map(p => p.id === editedProduct.id ? updatedProduct : p));
-      
+
       await fetch('/api/update-product', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -236,7 +236,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
     try {
       const updatedNotes = localNotes.filter((_, index) => index !== indexToDelete);
       const updatedHumintStr = updatedNotes.length > 0 ? JSON.stringify(updatedNotes) : "";
-      
+
       setLocalNotes(updatedNotes);
       const updatedProduct = { ...editedProduct, rawHumint: updatedHumintStr };
       setEditedProduct(updatedProduct);
@@ -428,15 +428,15 @@ export default function DashboardClient({ initialData }: { initialData: Competit
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {products.map((item, index) => {
             const isSelected = selectedForPlan.some(p => p.id === item.id);
-            const noteCount = getNotesCount(item.rawHumint); 
-            
+            const noteCount = getNotesCount(item.rawHumint);
+
             return (
               <div key={item.id || index} className={`bg-mkt-surface border-2 rounded-lg p-6 relative overflow-hidden group transition-all duration-300 flex flex-col shadow-sm ${isSelected ? 'border-mkt-makoto bg-mkt-makoto/5' : 'border-mkt-border hover:border-mkt-asagi'}`}>
                 <button onClick={() => togglePlanSelection(item)} className="absolute top-4 right-4 z-10 transition-colors">
                   {isSelected ? <CheckSquare size={28} className="text-mkt-makoto bg-white rounded" /> : <Square size={28} className="text-slate-300 hover:text-mkt-makoto bg-white rounded" />}
                 </button>
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-mkt-makoto to-mkt-asagi opacity-75"></div>
-                
+
                 <div className="w-full h-48 mb-5 bg-slate-50 border border-slate-100 rounded-md flex items-center justify-center overflow-hidden relative mt-4">
                   {item.imageUrl ? (
                     <img src={item.imageUrl} alt={item.name} className="object-contain w-full h-full p-2 mix-blend-multiply transition-transform duration-500 group-hover:scale-105" />
@@ -459,7 +459,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                 </div>
                 <h2 className="text-2xl font-bold mb-1 text-mkt-text-main">{item.brand}</h2>
                 <h3 className="text-mkt-text-sub text-sm mb-5 h-10 font-medium line-clamp-2">{item.name}</h3>
-                
+
                 <div className="flex flex-wrap gap-2 mb-4">
                   <span className="text-[10px] bg-mkt-asagi/10 text-mkt-asagi border border-mkt-asagi/30 px-2 py-1 rounded font-black tracking-wider">{item.tech}</span>
                   <span className="text-[10px] bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded font-black tracking-wider">{item.waterproof}</span>
@@ -470,7 +470,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                     <span className="text-mkt-text-sub font-bold">実売価格</span>
                     <span className="font-black text-3xl text-mkt-text-main tracking-tight">¥{item.price.toLocaleString()}</span>
                   </div>
-                  
+
                   <div className="flex justify-between items-center border-b border-mkt-border pb-3">
                     <span className="text-mkt-text-sub font-bold text-xs">平均評価: <span className="text-yellow-500 text-sm">★ {item.averageRating || "-"}</span></span>
                     <span className="text-mkt-text-sub font-bold text-xs">レビュー: <span className="text-mkt-asagi text-sm">{item.reviews.toLocaleString()}</span> 件</span>
@@ -507,7 +507,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
             <tbody>
               {products.map((item, index) => {
                 const isSelected = selectedForPlan.some(p => p.id === item.id);
-                const noteCount = getNotesCount(item.rawHumint); 
+                const noteCount = getNotesCount(item.rawHumint);
 
                 return (
                   <tr key={item.id || index} className={`border-b border-slate-200 hover:bg-slate-50 transition-colors ${isSelected ? 'bg-mkt-makoto/5' : ''}`}>
@@ -584,7 +584,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-mkt-surface border border-mkt-border rounded-xl w-full max-w-[95vw] h-[95vh] flex flex-col relative overflow-hidden shadow-2xl">
             <button onClick={() => setIsAddingProduct(false)} className="absolute top-4 right-4 text-mkt-text-sub hover:text-mkt-makoto transition-colors z-20 bg-slate-100 hover:bg-slate-200 p-2 rounded-full shadow-sm"><X size={28} /></button>
-            
+
             {/* 👑 修正：pr-16で×ボタンとの干渉を回避し、スマホ時は縦並びにする安全設計 */}
             <div className="p-6 pr-16 border-b border-mkt-border bg-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <h3 className="text-xl font-black text-mkt-text-main flex items-center gap-2">
@@ -598,35 +598,35 @@ export default function DashboardClient({ initialData }: { initialData: Competit
 
             <div className="flex-grow overflow-y-auto p-6 bg-slate-50 space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                
+
                 {/* 左側：基本仕様フォーム */}
                 <div className="space-y-6">
                   <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
                     <h4 className="text-sm font-black text-slate-700 border-b border-slate-100 pb-2 mb-4">基本スペック</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div><label className={labelClass}>MKT-ID (必須 / 重複不可)</label><input type="text" placeholder="例: DBB-006" className={inputClass} value={newProduct.id} onChange={e => setNewProduct({...newProduct, id: e.target.value})} /></div>
-                      <div><label className={labelClass}>製品分類</label><input type="text" className={inputClass} value={newProduct.classification} onChange={e => setNewProduct({...newProduct, classification: e.target.value})} /></div>
-                      <div><label className={labelClass}>ブランド名 (必須)</label><input type="text" placeholder="例: A社" className={inputClass} value={newProduct.brand} onChange={e => setNewProduct({...newProduct, brand: e.target.value})} /></div>
-                      <div><label className={labelClass}>実売価格 (円)</label><input type="number" className={inputClass} value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: Number(e.target.value)})} /></div>
-                      <div className="md:col-span-2"><label className={labelClass}>商品名 (必須)</label><input type="text" placeholder="製品の正式名称" className={inputClass} value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} /></div>
-                      <div className="md:col-span-2"><label className={labelClass}>画像URL</label><input type="text" className={inputClass} value={newProduct.imageUrl} onChange={e => setNewProduct({...newProduct, imageUrl: e.target.value})} /></div>
+                      <div><label className={labelClass}>MKT-ID (必須 / 重複不可)</label><input type="text" placeholder="例: DBB-006" className={inputClass} value={newProduct.id} onChange={e => setNewProduct({ ...newProduct, id: e.target.value })} /></div>
+                      <div><label className={labelClass}>製品分類</label><input type="text" className={inputClass} value={newProduct.classification} onChange={e => setNewProduct({ ...newProduct, classification: e.target.value })} /></div>
+                      <div><label className={labelClass}>ブランド名 (必須)</label><input type="text" placeholder="例: A社" className={inputClass} value={newProduct.brand} onChange={e => setNewProduct({ ...newProduct, brand: e.target.value })} /></div>
+                      <div><label className={labelClass}>実売価格 (円)</label><input type="number" className={inputClass} value={newProduct.price} onChange={e => setNewProduct({ ...newProduct, price: Number(e.target.value) })} /></div>
+                      <div className="md:col-span-2"><label className={labelClass}>商品名 (必須)</label><input type="text" placeholder="製品の正式名称" className={inputClass} value={newProduct.name} onChange={e => setNewProduct({ ...newProduct, name: e.target.value })} /></div>
+                      <div className="md:col-span-2"><label className={labelClass}>画像URL</label><input type="text" className={inputClass} value={newProduct.imageUrl} onChange={e => setNewProduct({ ...newProduct, imageUrl: e.target.value })} /></div>
                     </div>
                   </div>
 
                   <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
                     <h4 className="text-sm font-black text-slate-700 border-b border-slate-100 pb-2 mb-4">ハードウェア仕様</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div><label className={labelClass}>搭載テクノロジー</label><input type="text" placeholder="例: EMS / LED" className={inputClass} value={newProduct.tech} onChange={e => setNewProduct({...newProduct, tech: e.target.value})} /></div>
-                      <div><label className={labelClass}>防水規格</label><input type="text" placeholder="例: IPX5" className={inputClass} value={newProduct.waterproof} onChange={e => setNewProduct({...newProduct, waterproof: e.target.value})} /></div>
-                      <div className="md:col-span-2"><label className={labelClass}>ピン仕様</label><textarea className={`${inputClass} resize-none`} rows={2} placeholder="ピン本数や材質、柔軟性など" value={newProduct.pins} onChange={e => setNewProduct({...newProduct, pins: e.target.value})} /></div>
+                      <div><label className={labelClass}>搭載テクノロジー</label><input type="text" placeholder="例: EMS / LED" className={inputClass} value={newProduct.tech} onChange={e => setNewProduct({ ...newProduct, tech: e.target.value })} /></div>
+                      <div><label className={labelClass}>防水規格</label><input type="text" placeholder="例: IPX5" className={inputClass} value={newProduct.waterproof} onChange={e => setNewProduct({ ...newProduct, waterproof: e.target.value })} /></div>
+                      <div className="md:col-span-2"><label className={labelClass}>ピン仕様</label><textarea className={`${inputClass} resize-none`} rows={2} placeholder="ピン本数や材質、柔軟性など" value={newProduct.pins} onChange={e => setNewProduct({ ...newProduct, pins: e.target.value })} /></div>
                     </div>
                   </div>
 
                   <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
                     <h4 className="text-sm font-black text-slate-700 border-b border-slate-100 pb-2 mb-4">ECリンク情報</h4>
                     <div className="space-y-4">
-                      <div><label className={labelClass}>Amazon URL</label><input type="text" className={inputClass} value={newProduct.amazonUrl} onChange={e => setNewProduct({...newProduct, amazonUrl: e.target.value})} /></div>
-                      <div><label className={labelClass}>楽天市場 URL</label><input type="text" className={inputClass} value={newProduct.rakutenUrl} onChange={e => setNewProduct({...newProduct, rakutenUrl: e.target.value})} /></div>
+                      <div><label className={labelClass}>Amazon URL</label><input type="text" className={inputClass} value={newProduct.amazonUrl} onChange={e => setNewProduct({ ...newProduct, amazonUrl: e.target.value })} /></div>
+                      <div><label className={labelClass}>楽天市場 URL</label><input type="text" className={inputClass} value={newProduct.rakutenUrl} onChange={e => setNewProduct({ ...newProduct, rakutenUrl: e.target.value })} /></div>
                     </div>
                   </div>
                 </div>
@@ -636,12 +636,12 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   <div>
                     <h4 className="text-sm font-black text-slate-700 border-b border-slate-100 pb-2 mb-4">公式の訴求内容</h4>
                     <div className="space-y-4">
-                      <div><label className={labelClass}>対象顧客</label><input type="text" placeholder="例: 頭皮の硬さや顔のたるみが気になる30〜50代" className={inputClass} value={newProduct.claims?.target} onChange={e => setNewProduct({...newProduct, claims: {...newProduct.claims!, target: e.target.value}})} /></div>
-                      <div><label className={labelClass}>訴求事項</label><textarea className={`${inputClass} resize-none`} rows={3} placeholder="どんな悩みを解決すると主張しているか" value={newProduct.claims?.problem} onChange={e => setNewProduct({...newProduct, claims: {...newProduct.claims!, problem: e.target.value}})} /></div>
-                      <div><label className={labelClass}>最大の強み(USP)</label><textarea className={`${inputClass} resize-none`} rows={3} placeholder="他社に対する圧倒的優位点" value={newProduct.claims?.usp} onChange={e => setNewProduct({...newProduct, claims: {...newProduct.claims!, usp: e.target.value}})} /></div>
-                      <div><label className={labelClass}>痛みのなさ</label><textarea className={`${inputClass} resize-none`} rows={3} placeholder="刺激レベルや痛みの少なさに関する訴求" value={newProduct.claims?.pain} onChange={e => setNewProduct({...newProduct, claims: {...newProduct.claims!, pain: e.target.value}})} /></div>
-                      <div><label className={labelClass}>手軽さ</label><textarea className={`${inputClass} resize-none`} rows={3} placeholder="お風呂での使用、コードレス、操作性など" value={newProduct.claims?.ease} onChange={e => setNewProduct({...newProduct, claims: {...newProduct.claims!, ease: e.target.value}})} /></div>
-                      <div><label className={labelClass}>公式広告文案</label><textarea className={`${inputClass} resize-none`} rows={3} placeholder="実際のLPや広告で使われているメインのコピー文案" value={newProduct.claims?.copy} onChange={e => setNewProduct({...newProduct, claims: {...newProduct.claims!, copy: e.target.value}})} /></div>
+                      <div><label className={labelClass}>対象顧客</label><input type="text" placeholder="例: 頭皮の硬さや顔のたるみが気になる30〜50代" className={inputClass} value={newProduct.claims?.target} onChange={e => setNewProduct({ ...newProduct, claims: { ...newProduct.claims!, target: e.target.value } })} /></div>
+                      <div><label className={labelClass}>訴求事項</label><textarea className={`${inputClass} resize-none`} rows={3} placeholder="どんな悩みを解決すると主張しているか" value={newProduct.claims?.problem} onChange={e => setNewProduct({ ...newProduct, claims: { ...newProduct.claims!, problem: e.target.value } })} /></div>
+                      <div><label className={labelClass}>最大の強み(USP)</label><textarea className={`${inputClass} resize-none`} rows={3} placeholder="他社に対する圧倒的優位点" value={newProduct.claims?.usp} onChange={e => setNewProduct({ ...newProduct, claims: { ...newProduct.claims!, usp: e.target.value } })} /></div>
+                      <div><label className={labelClass}>痛みのなさ</label><textarea className={`${inputClass} resize-none`} rows={3} placeholder="刺激レベルや痛みの少なさに関する訴求" value={newProduct.claims?.pain} onChange={e => setNewProduct({ ...newProduct, claims: { ...newProduct.claims!, pain: e.target.value } })} /></div>
+                      <div><label className={labelClass}>手軽さ</label><textarea className={`${inputClass} resize-none`} rows={3} placeholder="お風呂での使用、コードレス、操作性など" value={newProduct.claims?.ease} onChange={e => setNewProduct({ ...newProduct, claims: { ...newProduct.claims!, ease: e.target.value } })} /></div>
+                      <div><label className={labelClass}>公式広告文案</label><textarea className={`${inputClass} resize-none`} rows={3} placeholder="実際のLPや広告で使われているメインのコピー文案" value={newProduct.claims?.copy} onChange={e => setNewProduct({ ...newProduct, claims: { ...newProduct.claims!, copy: e.target.value } })} /></div>
                     </div>
                   </div>
                 </div>
@@ -659,7 +659,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
             <button onClick={() => setSelectedProduct(null)} className="absolute top-4 right-4 text-mkt-text-sub hover:text-mkt-makoto transition-colors z-20 bg-slate-100 hover:bg-slate-200 p-2 rounded-full shadow-sm"><X size={28} /></button>
 
             <div className="flex flex-col lg:flex-row h-full overflow-hidden">
-              
+
               {/* 左ペイン：製品情報の完全編集 ＆ 追加情報メモ */}
               <div className="p-6 lg:w-1/2 border-r border-mkt-border bg-slate-50 overflow-y-auto relative flex flex-col">
                 {/* 👑 修正：pr-16 lg:pr-0 を追加し、ボタン領域を折り返し対応にしてXボタンと絶対に干渉させない */}
@@ -683,32 +683,32 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
                     <h4 className="text-sm font-black text-slate-700 border-b border-slate-100 pb-2 mb-4">基本情報</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div><label className={labelClass}>ブランド名</label><input type="text" className={inputClass} value={editedProduct.brand} onChange={e => setEditedProduct({...editedProduct, brand: e.target.value})} /></div>
-                      <div><label className={labelClass}>製品分類</label><input type="text" className={inputClass} value={editedProduct.classification} onChange={e => setEditedProduct({...editedProduct, classification: e.target.value})} /></div>
-                      <div className="md:col-span-2"><label className={labelClass}>商品名</label><input type="text" className={inputClass} value={editedProduct.name} onChange={e => setEditedProduct({...editedProduct, name: e.target.value})} /></div>
-                      <div><label className={labelClass}>実売価格 (円)</label><input type="number" className={inputClass} value={editedProduct.price} onChange={e => setEditedProduct({...editedProduct, price: Number(e.target.value)})} /></div>
-                      <div><label className={labelClass}>画像URL</label><input type="text" className={inputClass} value={editedProduct.imageUrl} onChange={e => setEditedProduct({...editedProduct, imageUrl: e.target.value})} /></div>
+                      <div><label className={labelClass}>ブランド名</label><input type="text" className={inputClass} value={editedProduct.brand} onChange={e => setEditedProduct({ ...editedProduct, brand: e.target.value })} /></div>
+                      <div><label className={labelClass}>製品分類</label><input type="text" className={inputClass} value={editedProduct.classification} onChange={e => setEditedProduct({ ...editedProduct, classification: e.target.value })} /></div>
+                      <div className="md:col-span-2"><label className={labelClass}>商品名</label><input type="text" className={inputClass} value={editedProduct.name} onChange={e => setEditedProduct({ ...editedProduct, name: e.target.value })} /></div>
+                      <div><label className={labelClass}>実売価格 (円)</label><input type="number" className={inputClass} value={editedProduct.price} onChange={e => setEditedProduct({ ...editedProduct, price: Number(e.target.value) })} /></div>
+                      <div><label className={labelClass}>画像URL</label><input type="text" className={inputClass} value={editedProduct.imageUrl} onChange={e => setEditedProduct({ ...editedProduct, imageUrl: e.target.value })} /></div>
                     </div>
                   </div>
 
                   <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
                     <h4 className="text-sm font-black text-slate-700 border-b border-slate-100 pb-2 mb-4">ハードウェア仕様</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div><label className={labelClass}>搭載テクノロジー</label><input type="text" className={inputClass} value={editedProduct.tech} onChange={e => setEditedProduct({...editedProduct, tech: e.target.value})} /></div>
-                      <div><label className={labelClass}>防水規格</label><input type="text" className={inputClass} value={editedProduct.waterproof} onChange={e => setEditedProduct({...editedProduct, waterproof: e.target.value})} /></div>
-                      <div className="md:col-span-2"><label className={labelClass}>ピン仕様</label><textarea className={`${inputClass} resize-none`} rows={2} value={editedProduct.pins} onChange={e => setEditedProduct({...editedProduct, pins: e.target.value})} /></div>
+                      <div><label className={labelClass}>搭載テクノロジー</label><input type="text" className={inputClass} value={editedProduct.tech} onChange={e => setEditedProduct({ ...editedProduct, tech: e.target.value })} /></div>
+                      <div><label className={labelClass}>防水規格</label><input type="text" className={inputClass} value={editedProduct.waterproof} onChange={e => setEditedProduct({ ...editedProduct, waterproof: e.target.value })} /></div>
+                      <div className="md:col-span-2"><label className={labelClass}>ピン仕様</label><textarea className={`${inputClass} resize-none`} rows={2} value={editedProduct.pins} onChange={e => setEditedProduct({ ...editedProduct, pins: e.target.value })} /></div>
                     </div>
                   </div>
 
                   <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
                     <h4 className="text-sm font-black text-slate-700 border-b border-slate-100 pb-2 mb-4">公式の訴求内容</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="md:col-span-2"><label className={labelClass}>対象顧客</label><input type="text" className={inputClass} value={editedProduct.claims?.target} onChange={e => setEditedProduct({...editedProduct, claims: {...editedProduct.claims!, target: e.target.value}})} /></div>
-                      <div className="md:col-span-2"><label className={labelClass}>訴求事項</label><textarea className={`${inputClass} resize-none`} rows={3} value={editedProduct.claims?.problem} onChange={e => setEditedProduct({...editedProduct, claims: {...editedProduct.claims!, problem: e.target.value}})} /></div>
-                      <div className="md:col-span-2"><label className={labelClass}>最大の強み</label><textarea className={`${inputClass} resize-none`} rows={3} value={editedProduct.claims?.usp} onChange={e => setEditedProduct({...editedProduct, claims: {...editedProduct.claims!, usp: e.target.value}})} /></div>
-                      <div className="md:col-span-2"><label className={labelClass}>痛みのなさ</label><textarea className={`${inputClass} resize-none`} rows={3} value={editedProduct.claims?.pain} onChange={e => setEditedProduct({...editedProduct, claims: {...editedProduct.claims!, pain: e.target.value}})} /></div>
-                      <div className="md:col-span-2"><label className={labelClass}>手軽さ</label><textarea className={`${inputClass} resize-none`} rows={3} value={editedProduct.claims?.ease} onChange={e => setEditedProduct({...editedProduct, claims: {...editedProduct.claims!, ease: e.target.value}})} /></div>
-                      <div className="md:col-span-2"><label className={labelClass}>公式広告文案</label><textarea className={`${inputClass} resize-none`} rows={3} value={editedProduct.claims?.copy} onChange={e => setEditedProduct({...editedProduct, claims: {...editedProduct.claims!, copy: e.target.value}})} /></div>
+                      <div className="md:col-span-2"><label className={labelClass}>対象顧客</label><input type="text" className={inputClass} value={editedProduct.claims?.target} onChange={e => setEditedProduct({ ...editedProduct, claims: { ...editedProduct.claims!, target: e.target.value } })} /></div>
+                      <div className="md:col-span-2"><label className={labelClass}>訴求事項</label><textarea className={`${inputClass} resize-none`} rows={3} value={editedProduct.claims?.problem} onChange={e => setEditedProduct({ ...editedProduct, claims: { ...editedProduct.claims!, problem: e.target.value } })} /></div>
+                      <div className="md:col-span-2"><label className={labelClass}>最大の強み</label><textarea className={`${inputClass} resize-none`} rows={3} value={editedProduct.claims?.usp} onChange={e => setEditedProduct({ ...editedProduct, claims: { ...editedProduct.claims!, usp: e.target.value } })} /></div>
+                      <div className="md:col-span-2"><label className={labelClass}>痛みのなさ</label><textarea className={`${inputClass} resize-none`} rows={3} value={editedProduct.claims?.pain} onChange={e => setEditedProduct({ ...editedProduct, claims: { ...editedProduct.claims!, pain: e.target.value } })} /></div>
+                      <div className="md:col-span-2"><label className={labelClass}>手軽さ</label><textarea className={`${inputClass} resize-none`} rows={3} value={editedProduct.claims?.ease} onChange={e => setEditedProduct({ ...editedProduct, claims: { ...editedProduct.claims!, ease: e.target.value } })} /></div>
+                      <div className="md:col-span-2"><label className={labelClass}>公式広告文案</label><textarea className={`${inputClass} resize-none`} rows={3} value={editedProduct.claims?.copy} onChange={e => setEditedProduct({ ...editedProduct, claims: { ...editedProduct.claims!, copy: e.target.value } })} /></div>
                     </div>
                   </div>
                 </div>
@@ -717,7 +717,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   <h4 className="text-sm text-mkt-makoto font-black tracking-widest mb-3 flex items-center gap-2">
                     追加情報・メモ
                   </h4>
-                  
+
                   {localNotes.length === 0 ? (
                     <p className="text-xs text-slate-400 italic mb-4 font-bold">現在、この製品に関する追加情報は登録されていません。</p>
                   ) : (
@@ -729,7 +729,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                             <span>{n.date}</span>
                           </div>
                           <p className="font-bold text-slate-800 leading-relaxed whitespace-pre-wrap">{n.note}</p>
-                          <button 
+                          <button
                             onClick={() => handleDeleteNote(i)}
                             disabled={isDeletingNote}
                             className="absolute top-2 right-2 text-slate-300 hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"
@@ -745,7 +745,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   <div className="border-t border-slate-200 pt-4 mt-2">
                     <span className="text-[10px] text-mkt-asagi font-black block mb-2 tracking-wider">新しい情報を追記する</span>
                     <div className="grid grid-cols-2 gap-3 mb-3">
-                      <input type="text" placeholder="投稿者 (例: 渡辺)" value={noteAuthor} onChange={(e) => setNoteAuthor(e.target.value)} className={inputClass} />
+                      <input type="text" placeholder="投稿者 (例: 山田)" value={noteAuthor} onChange={(e) => setNoteAuthor(e.target.value)} className={inputClass} />
                       <select value={noteCategory} onChange={(e) => setNoteCategory(e.target.value)} className={`${inputClass} cursor-pointer`}>
                         <option value="商談・メーカー情報">商談・メーカー情報</option>
                         <option value="市場・競合調査">市場・競合調査</option>
@@ -768,7 +768,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                   <h4 className="font-bold tracking-widest text-mkt-text-main flex items-center gap-3 text-xl">
                     AI統合分析 ＆ 顧客評価
                   </h4>
-                  
+
                   {!isAnalyzing && !analyzedData && (
                     <button onClick={() => setPendingProduct(editedProduct)} className="bg-mkt-surface border-2 border-mkt-makoto text-mkt-makoto hover:bg-mkt-makoto hover:text-white font-bold py-2 px-4 rounded shadow-sm flex items-center gap-2 text-sm transition-colors animate-pulse hover:animate-none">
                       AI分析を実行する
@@ -780,7 +780,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                     </button>
                   )}
                 </div>
-                
+
                 {isAnalyzing ? (
                   <div className="flex-grow flex flex-col items-center justify-center text-mkt-makoto border-2 border-dashed border-mkt-makoto/20 rounded-lg m-4">
                     <Loader2 className="animate-spin mb-6" size={64} />
@@ -792,11 +792,11 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                 ) : !analyzedData ? (
                   <div className="flex-grow flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-300 rounded-lg m-4 p-8 text-center">
                     <h3 className="text-lg font-black text-slate-600 mb-2">分析準備OK</h3>
-                    <p className="text-sm font-bold leading-relaxed">左側のパネルで製品情報の確認・編集、および追加情報の入力を行ってください。<br/>準備が完了したら、右上の「AI分析を実行する」ボタンを押して分析を開始します。</p>
+                    <p className="text-sm font-bold leading-relaxed">左側のパネルで製品情報の確認・編集、および追加情報の入力を行ってください。<br />準備が完了したら、右上の「AI分析を実行する」ボタンを押して分析を開始します。</p>
                   </div>
                 ) : (
                   <div className="animate-in fade-in slide-in-from-right-8 duration-500 flex flex-col gap-8">
-                    
+
                     <div className="flex items-center gap-8 bg-white p-6 rounded-lg border border-mkt-border shadow-sm">
                       <div className="w-48 h-48 flex-shrink-0">
                         <ResponsiveContainer width="100%" height="100%">
@@ -821,7 +821,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                         </div>
                       </div>
                     </div>
-                    
+
                     <div>
                       <h5 className="text-sm font-bold text-mkt-text-sub tracking-widest mb-4 flex items-center gap-2">
                         分析結果と戦略上の機会
@@ -835,7 +835,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                                 評価: {gap.assessment}
                               </span>
                             </div>
-                            
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                               <div className="bg-slate-50 p-4 rounded border-l-4 border-mkt-asagi border-y border-r border-slate-100">
                                 <span className="text-[10px] text-mkt-asagi font-bold tracking-wider mb-2 block">公式の主張</span>
@@ -846,7 +846,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                                 <p className="text-sm font-bold text-mkt-text-main leading-relaxed">{gap.reality}</p>
                               </div>
                             </div>
-                            
+
                             <div className="mt-4 bg-mkt-makoto/5 border border-mkt-makoto/20 p-4 rounded-md">
                               <span className="text-xs text-mkt-makoto font-bold tracking-widest mb-2 flex items-center gap-2">
                                 当社の戦略的方針
@@ -866,7 +866,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                     <h4 className="font-bold tracking-widest text-mkt-text-main flex items-center gap-3 text-xl mb-6">
                       <BarChart3 className="text-mkt-asagi" /> プラットフォーム別 評価統計
                     </h4>
-                    
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                       <div className="bg-slate-800 p-5 rounded-lg flex justify-between items-center shadow-md border border-slate-700" style={{ color: '#FFFFFF' }}>
                         <div className="flex items-center gap-3">
@@ -882,7 +882,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="bg-[#BF0000] p-5 rounded-lg flex justify-between items-center shadow-md border border-[#990000]" style={{ color: '#FFFFFF' }}>
                         <div className="flex items-center gap-3">
                           <ShoppingCart size={24} style={{ color: '#FECACA' }} />
@@ -909,7 +909,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                         <button onClick={() => { setFilterPlatform('Amazon'); setVisibleReviewCount(50); }} className={`px-4 py-1.5 rounded text-sm font-black transition-all ${filterPlatform === 'Amazon' ? 'bg-slate-800 shadow' : 'hover:bg-slate-300/50'}`} style={filterPlatform === 'Amazon' ? { color: '#FFFFFF' } : { color: '#475569' }}>Amazon</button>
                         <button onClick={() => { setFilterPlatform('楽天市場'); setVisibleReviewCount(50); }} className={`px-4 py-1.5 rounded text-sm font-black transition-all ${filterPlatform === '楽天市場' ? 'bg-[#BF0000] shadow' : 'hover:bg-slate-300/50'}`} style={filterPlatform === '楽天市場' ? { color: '#FFFFFF' } : { color: '#475569' }}>楽天市場</button>
                       </div>
-                      
+
                       <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
                         <div className="flex flex-1 xl:flex-none items-center gap-2 bg-white border border-slate-300 rounded-md px-3 py-2 shadow-sm focus-within:border-mkt-asagi transition-colors">
                           <Star size={16} className="text-slate-400 flex-shrink-0" />
@@ -931,7 +931,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
                         </div>
                       </div>
                     </div>
-                    
+
                     {filteredAndSortedReviews.length === 0 ? (
                       <div className="bg-slate-50 border border-slate-200 rounded-lg p-10 text-center text-slate-500 font-bold">該当するレビューが見つかりません。</div>
                     ) : (
