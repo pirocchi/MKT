@@ -395,7 +395,7 @@ export default function DashboardClient({ initialData }: { initialData: Competit
       <header className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-mkt-border pb-6 mb-8 gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-bold tracking-wider flex items-center gap-3">
-            <span className="text-mkt-makoto">分析くん</span><span>1号</span>
+            <span className="text-mkt-makoto">まことちゃん</span><span>1号</span>
           </h1>
           <p className="text-mkt-asagi text-xs md:text-sm mt-2 tracking-widest flex items-center gap-2 font-bold">
             競合製品の市場評価と方針の比較分析なんかをやってみる感じです
