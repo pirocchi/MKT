@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const apiKey = process.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
-export async function analyzeReviewSentiment(reviewsText: string, claims: any, averageRating: string, modelName: string = "gemini-3.5-flash") {
+export async function analyzeReviewSentiment(reviewsText: string, claims: any, averageRating: string, modelName: string = "gemini-3.6-flash") {
   if (!apiKey) {
     console.warn("⚠️ GEMINI_API_KEYが設定されていません。");
     return null;
@@ -89,7 +89,7 @@ export async function analyzeReviewSentiment(reviewsText: string, claims: any, a
   }
 }
 
-export async function generateProductPlan(products: any[], modelName: string = "gemini-3.5-flash") {
+export async function generateProductPlan(products: any[], modelName: string = "gemini-3.6-flash") {
   if (!apiKey) return null;
 
   try {
